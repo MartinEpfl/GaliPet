@@ -1,29 +1,26 @@
 
 #include <Servo.h>
 #include <Keyboard.h>
+#include <KeyboardController.h>
+//USBHost : KeyboardController class
 
 Servo monServomoteur;
-
+USBHost usb;
+KeyboardController keyboard(usb);
+int position;
 void setup() {
   Serial.begin(9600);
-  Keyboard.begin();
   // Attache le servomoteur à la broche D9
 
   monServomoteur.attach(9);
+  position = monServomoteur.read();
+
 }
 
 void loop() {
   
-  int in= 0; // for incoming serial data
+  usb.Task();
 
-  if(Serial.available()){
-    in = Serial.read();
-   
-    Serial.print(F("Input detected: '"));
-    Serial.print(in);
-    Serial.print(F("' 0x"));
-    Serial.print(in, HEX);
-  }
   
   /*
   for (int position = 0; position <= 180; position++) {
@@ -37,4 +34,15 @@ void loop() {
     monServomoteur.write(position);
     delay(15);
   }*/
+}
+
+void keyPressed() {
+  Serial.print("Pressed:  ");
+  Serial.print(keyboard.getKey());
+  if(keyboard.getKey() == 'd' and position<180)
+    position++;
+  if(keyboard.getKey() == 'f' and position>0)
+    position--;  
+  monServomoteur.write(position);
+
 }
