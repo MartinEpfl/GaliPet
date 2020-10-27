@@ -83,10 +83,11 @@ void current_sense()                  // current sense and diagnosis
 
 void setup(void)
 {
+  Serial.begin(9600);      //Set Baud Rate
   int i;
+  
   for(i=4;i<=7;i++)
     pinMode(i, OUTPUT);
-  Serial.begin(19200);      //Set Baud Rate
   Serial.println("Run keyboard control");
   digitalWrite(E1,LOW);
   digitalWrite(E2,LOW);
@@ -105,12 +106,12 @@ void loop(void)
    */
   if(Serial.available()){
     char val = Serial.read();
-    Serial.print("AHAH");
     if(val != -1)
     {
       switch(val)
       {
       case 'w'://Move Forward
+        Serial.print("Move forward");
         advance (255,255);   //move forward in max speed
         break;
       case 's'://Move Backward
