@@ -15,6 +15,11 @@ void setup() {
   monServomoteur.attach(7);
   positionOfArm = monServomoteur.read();
   Serial.print(positionOfArm);
+
+  for (int position = 0; position <= 90; position++) {
+        monServomoteur.write(position);
+        delay(8);
+      } 
 }
 
 void loop() {
