@@ -1,4 +1,4 @@
-
+  
 #include <Servo.h>
 //#include <KeyboardController.h>
 //USBHost : KeyboardController class
@@ -16,34 +16,44 @@ void setup() {
   positionOfArm = monServomoteur.read();
   Serial.print(positionOfArm);
 
-  for (int position = 0; position <= 90; position++) {
-        monServomoteur.write(position);
+  for (int positionA = positionOfArm; positionA <= 180; positionA++) {
+        monServomoteur.write(positionA);
+        Serial.println(monServomoteur.read());
+        Serial.println("YEP");
         delay(8);
       } 
 }
 
 void loop() {
   
-  if (Serial.available() > 0) {
+ // if (Serial.available() > 0) {
     // read the incoming byte:
     incomingByte = Serial.read();
    
     // say what you got:
-    Serial.print("I received: ");
-    Serial.println(incomingByte, DEC);
-    if(incomingByte==32){
+    //Serial.print("I received: ");
+    //monServomoteur.write(0);
+   // Serial.println(incomingByte, DEC);
+    Serial.println(monServomoteur.read());
+    //if(incomingByte==32){
       Serial.print("Turning...");
+      for (int position = 180; position > 0; position--) {
+        monServomoteur.write(position);
+        Serial.println("YESIR");
+        Serial.println(position);
 
-      for (int position = 0; position <= 180; position++) {
-        monServomoteur.write(position);
-        delay(8);
-      }   
+       delay(10);
+     // }   
+   }      
       delay(1000);
-      for (int position = 180; position >= 0; position--) {
+
+   for (int position = 0; position < 180; position++) {
         monServomoteur.write(position);
-        delay(8);
-      }    
-    }     
+               Serial.println("LALALA");
+
+        delay(10);
+      }   
+   
   }
   /*
   
@@ -58,4 +68,3 @@ void loop() {
     monServomoteur.write(position);
     delay(15);
   }*/
-}
