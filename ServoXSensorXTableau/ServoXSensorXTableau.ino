@@ -12,7 +12,7 @@ Servo monServomoteur;
 int positionOfArm;
 int count = 0;
 SharpIR mySensor = SharpIR(IRPin, model);
-int numberOfInputs = 20;
+int const numberOfInputs = 20;
 int numberDetected[numberOfInputs];
 int average = 0;
 void setup() {
@@ -33,7 +33,7 @@ void loop() {
   }
   if(count == numberOfInputs){
       average =0;
-      for(j=0;j<numberOfInputs;++){
+      for(int j=0;j<numberOfInputs;j++){
         average+=numberDetected[j];
       }
       average/=numberOfInputs;
@@ -63,18 +63,18 @@ void loop() {
 void fromTo(){
   positionOfArm = monServomoteur.read();
   average = (average-3)/17*180;
-  print("Debugging fromTo(), this is average : ");
-  print(average)
-  print(" and this is positionOfArm: ");
-  println(positionOfArm)
+  Serial.print("Debugging fromTo(), this is average : ");
+  Serial.print(average);
+  Serial.print(" and this is positionOfArm: ");
+  Serial.println(positionOfArm);
   if(positionOfArm>average){
-      for (i = average; i<= positionOfArm; i++) {
+      for (int i = average; i<= positionOfArm; i++) {
         monServomoteur.write(i);
         delay(8);
       }      
   }
   else{
-      for (i = average; i>= positionOfArm; i--) {
+      for (int i = average; i>= positionOfArm; i--) {
         monServomoteur.write(i);
         delay(8);
       }   
