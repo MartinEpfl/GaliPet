@@ -17,8 +17,6 @@ int numberDetected[numberOfInputs];
 int average = 0;
 void setup() {
   Serial.begin(9600);
-  // Attache le servomoteur à la broche D9
-
   monServomoteur.attach(7);
   positionOfArm = monServomoteur.read();
   Serial.print(positionOfArm);
@@ -38,6 +36,7 @@ void loop() {
       }
       average/=numberOfInputs;
       fromTo();
+      count = 0;
   }
   Serial.print("DEBUGGING!!Distance : ");
   Serial.print(distance_cm);
@@ -45,36 +44,23 @@ void loop() {
   Serial.println(count);
 
 
-  /*
-  
-  for (int position = 0; position <= 180; position++) {
-    monServomoteur.write(position);
-    delay(15);
-  }
-  //Fait bouger le bras de 0° à 180°
-
-  // Fait bouger le bras de 180° à 10°
-  for (int position = 180; position >= 0; position--) {
-    monServomoteur.write(position);
-    delay(15);
-  }*/
 }
 
 void fromTo(){
   positionOfArm = monServomoteur.read();
-  average = (average-3)/17*180;
+  average = (average-3)/17*180; //Brings average between 0 and 180
   Serial.print("Debugging fromTo(), this is average : ");
   Serial.print(average);
   Serial.print(" and this is positionOfArm: ");
   Serial.println(positionOfArm);
   if(positionOfArm>average){
-      for (int i = average; i<= positionOfArm; i++) {
+      for (int i = positionOfArm; i>= average; i--) {
         monServomoteur.write(i);
         delay(8);
       }      
   }
   else{
-      for (int i = average; i>= positionOfArm; i--) {
+      for (int i = positionOfArm; i<= average; i++) {
         monServomoteur.write(i);
         delay(8);
       }   
