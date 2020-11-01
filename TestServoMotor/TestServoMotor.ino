@@ -5,6 +5,11 @@
 
 Servo monServomoteur;
 int positionOfArm;
+int uplim;
+int lowlim;
+int upspeed;
+int downspeed;
+int setspeed;
 byte incomingByte;
 
 
@@ -16,16 +21,23 @@ void setup() {
   positionOfArm = monServomoteur.read();
   Serial.print(positionOfArm);
 
-  for (int positionA = positionOfArm; positionA <= 180; positionA++) {
+  uplim = 250;
+  lowlim = 0;
+  setspeed = 10;
+  upspeed = 10;
+  downspeed = 1;
+
+  for (int positionA = positionOfArm; positionA <= uplim; positionA++) {
         monServomoteur.write(positionA);
         Serial.println(monServomoteur.read());
-        Serial.println("YEP");
-        delay(8);
+        Serial.println("Init");
+        delay(setspeed);
       } 
 }
 
 void loop() {
-  
+
+ 
  // if (Serial.available() > 0) {
     // read the incoming byte:
     incomingByte = Serial.read();
@@ -37,21 +49,21 @@ void loop() {
     Serial.println(monServomoteur.read());
     //if(incomingByte==32){
       Serial.print("Turning...");
-      for (int position = 180; position > 0; position--) {
+      for (int position = uplim; position > lowlim; position--) {
         monServomoteur.write(position);
         Serial.println("YESIR");
         Serial.println(position);
 
-       delay(10);
+       delay(upspeed);
      // }   
    }      
       delay(1000);
 
-   for (int position = 0; position < 180; position++) {
+   for (int position = lowlim; position < uplim; position++) {
         monServomoteur.write(position);
                Serial.println("LALALA");
 
-        delay(10);
+        delay(downspeed);
       }   
    
   }

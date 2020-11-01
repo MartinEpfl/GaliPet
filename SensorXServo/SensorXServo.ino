@@ -51,18 +51,19 @@ void loop() {
   Serial.print("Mean distance: ");
   Serial.print(distance_cm);
   Serial.println(" cm");
+      Serial.print(monServomoteur.read());
 
   if(distance_cm <= 20){
       Serial.println("Turning...");
 
       for (int position = 0; position <= 180; position++) {
         monServomoteur.write(position);
-        delay(8);
+      //  delay(8);
       }   
       delay(1000);
       for (int position = 180; position >= 0; position--) {
         monServomoteur.write(position);
-        delay(8);
+        //delay(8);
       }    
 
   }
