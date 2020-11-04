@@ -2,6 +2,8 @@
 
 #include <SharpIR.h>
 
+#include <SharpIR.h>
+
 
 /*  Project: Ardu_Serie # 82
  *   Sharp IR Sensor -  0A41SK 
