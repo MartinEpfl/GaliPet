@@ -43,7 +43,7 @@ void loop(void)
       {
       case 'w'://Move Forward
         Serial.println("Move forward");
-        advance (50);   //move forward in max speed
+        advance (200);   //move forward in max speed
         break;
       case 's'://Move Backward
         back_off (5);   //move back in max speed

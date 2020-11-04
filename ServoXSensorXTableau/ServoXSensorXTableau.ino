@@ -16,7 +16,7 @@ int const numberOfInputs = 20;
 int numberDetected[numberOfInputs];
 int average = 0;
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   monServomoteur.attach(7);
   positionOfArm = monServomoteur.read();
   Serial.print(positionOfArm);
@@ -27,6 +27,8 @@ void loop() {
   distance_cm = mySensor.distance();
   if(distance_cm<=20 and distance_cm>=3 and count!=numberOfInputs){
     numberDetected[count] = distance_cm;
+    /*Serial.println("This is numberDetected :");
+    Serial.println(numberDetected[count] );*/
     count++;
   }
   if(count == numberOfInputs){
@@ -38,17 +40,19 @@ void loop() {
       fromTo();
       count = 0;
   }
-  Serial.print("DEBUGGING!!Distance : ");
+  /*Serial.print("DEBUGGING!!Distance : ");
   Serial.print(distance_cm);
-  Serial.print("count is : ");
-  Serial.println(count);
+  Serial.print(" count is : ");
+  Serial.println(count);*/
 
 
 }
 
 void fromTo(){
   positionOfArm = monServomoteur.read();
-  average = (average-3)/17*180; //Brings average between 0 and 180
+        Serial.println(average);
+
+  average = 180*(average-3)/17; //Brings average between 0 and 180
   Serial.print("Debugging fromTo(), this is average : ");
   Serial.print(average);
   Serial.print(" and this is positionOfArm: ");
