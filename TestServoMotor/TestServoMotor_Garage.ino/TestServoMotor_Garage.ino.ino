@@ -23,8 +23,8 @@ void setup() {
   uplim = 70;
   lowlim = 0;
   setspeed = 10;
-  upspeed = 8;
-  downspeed = 8;
+  upspeed = 0;
+  downspeed = 0;
 
   for (int positionA = positionOfArm; positionA <= uplim; positionA++) {
         monServomoteur.write(positionA);
@@ -48,6 +48,13 @@ void loop() {
     Serial.println(monServomoteur.read());
     //if(incomingByte==32){
       Serial.print("Turning...");
+      /*
+      monServomoteur.write(lowlim);
+      delay(1000);
+      monServomoteur.write(uplim);
+      */
+      
+      
       for (int position = uplim; position > lowlim; position--) {
         monServomoteur.write(position);
         Serial.println("Clockwise");
@@ -64,7 +71,7 @@ void loop() {
 
         delay(downspeed);
       }   
-   
+  
   }
   /*
   

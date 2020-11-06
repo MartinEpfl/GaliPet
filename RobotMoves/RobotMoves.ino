@@ -28,16 +28,18 @@ int waitingOnBottleTime = 1000; //Le temps attendu sur la bouteille
 
 Servo servoBack;
 int pinServoBack = 8; //Pin of servo for the back (PWM)
+int positionOfBack;
+int uplim_b = 70;
+int lowlim_b = 0;
 int speedBack = 20; //Speed back is opening/closing
 int waitingBottleOut = 3000; //Waiting for bottle to go out
-int positionOfBack;
 
 
 int E1 = 4;     //M1 Speed Control (PWM)
 int M1 = 33;     //M1 Direction Control (Digital)
 int E2 = 5; //M2 Speed Control (PWM)
 int M2 = 34; //M2 Direction control (Digital)
-int speedForward = 200; //Speed moving forward between 0 and 255
+int speedForward = 100; //Speed moving forward between 0 and 255
 int speedBackward = 50; //Speed moving backward between 0 and 255
 void setup(void)
 {
@@ -59,7 +61,8 @@ void setup(void)
   positionOfBack = servoBack.read(); 
 
   Serial.println("Reseting the back...");
-  for (int positionB = positionOfBack; positionB <= uplim; positionB++) {
+  servoBack.write(uplim_b);
+  for (int positionB = positionOfBack; positionB <= uplim_b; positionB++) {
         servoBack.write(positionB);
         delay(setspeed);
   } 
@@ -122,12 +125,12 @@ void arm(){
 void back(){
    stop();
    Serial.println("Back opening...");
-   for (int position = uplim; position > lowlim; position--) {  
+   for (int position = uplim_b; position > lowlim_b; position--) {  
      servoBack.write(position);
      delay(speedBack);
    }          
    delay(waitingBottleOut);
-   for (int position = lowlim; position < uplim; position++) {
+   for (int position = lowlim_b; position < uplim_b; position++) {
      servoBack.write(position);
      delay(speedBack);
    }   
