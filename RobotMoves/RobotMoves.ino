@@ -66,6 +66,12 @@ void setup(void)
         servoBack.write(positionB);
         delay(setspeed);
   } 
+  Serial.println("Controls : W to advance.");
+  Serial.println("S to back off.");
+  Serial.println("A to go left.");
+  Serial.println("D to go right.");
+  Serial.println("L to make the arm go down.");
+  Serial.println("D to open the back.");
   Serial.println("Run keyboard control");
 
 }
@@ -105,7 +111,13 @@ void loop(void)
     }
     else stop();
   }
-
+  Serial.println("Controls : W to advance.");
+  Serial.println("S to back off.");
+  Serial.println("A to go left.");
+  Serial.println("D to go right.");
+  Serial.println("L to make the arm go down.");
+  Serial.println("D to open the back.");
+  Serial.println("Run keyboard control");
 }
 
 void arm(){
