@@ -17,17 +17,17 @@ byte incomingByte; //Byte being read from user
 //All the speeds are in ms/angle (it is not a speed I know it's the inverse of a speed
 
 Servo servoArm;
-int pinservoArm =  7; //Pin of servo for the ARM (PWM)
+int pinservoArm =  8; //Pin of servo for the ARM (PWM)
 int positionOfArm;
 int uplim = 3; //Position when the arm is at the top
-int lowlim = 250; //Position when the arm is at the bottom
+int lowlim =70; //Position when the arm is at the bottom
 int upspeed = 1;
 int downspeed = 10;
 int setspeed = 10;
 int waitingOnBottleTime = 1000; //Le temps attendu sur la bouteille
 
 Servo servoBack;
-int pinServoBack = 8; //Pin of servo for the back (PWM)
+int pinServoBack = 7; //Pin of servo for the back (PWM)
 int positionOfBack;
 int uplim_b = 70; //Position of back when close
 int lowlim_b = 0; //Position of back when open
@@ -36,11 +36,11 @@ int waitingBottleOut = 3000; //Waiting for bottle to go out
 
 
 int E1 = 4;     //M1 Speed Control (PWM)
-int M1 = 33;     //M1 Direction Control (Digital)
+int M1 = 27;     //M1 Direction Control (Digital)
 int E2 = 5; //M2 Speed Control (PWM)
-int M2 = 34; //M2 Direction control (Digital)
-int speedForward = 100; //Speed moving forward between 0 and 255
-int speedBackward = 50; //Speed moving backward between 0 and 255
+int M2 = 29; //M2 Direction control (Digital)
+int speedForward = 150; //Speed moving forward between 0 and 255
+int speedBackward = 150; //Speed moving backward between 0 and 255
 void setup(void)
 {
   Serial.begin(57600);      //Set Baud Rate
@@ -50,35 +50,29 @@ void setup(void)
   pinMode(M2, OUTPUT);
   servoArm.attach(pinservoArm);
   servoBack.attach(pinServoBack);
-  delay(2000);
   positionOfArm = servoArm.read(); 
-  
   Serial.println("Reseting the arm...");
   for (int positionA = positionOfArm; positionA >= uplim; positionA--) {
         servoArm.write(positionA);
         delay(setspeed);
   } 
-  
+  Serial.println("DONE");
   positionOfBack = servoBack.read(); 
-  Serial.println(positionOfBack);
-
   Serial.println("Reseting the back...");
   servoBack.write(uplim_b);
   for (int positionB = positionOfBack; positionB <= uplim_b; positionB++) {
         servoBack.write(positionB);
         delay(setspeed);
   } 
-  Serial.println("Controls : W to advance.");
-  Serial.println("S to back off.");
-  Serial.println("A to go left.");
-  Serial.println("D to go right.");
-  Serial.println("L to make the arm go down.");
-  Serial.println("D to open the back.");
+  Serial.println("DONE");
+  Serial.println("Controls :");
+  Serial.println("w to advance.");
+  Serial.println("s to back off.");
+  Serial.println("a to go left.");
+  Serial.println("d to go right.");
+  Serial.println("l to make the arm go down.");
+  Serial.println("d to open the back.");
   Serial.println("Run keyboard control");
-  delay(2000);
-  back();
-  delay(2000);
-  arm();
 }
 
 void loop(void)
@@ -116,11 +110,11 @@ void loop(void)
     }
     else stop();
     Serial.println("Controls : W to advance.");
-    Serial.println("S to back off.");
-    Serial.println("A to go left.");
-    Serial.println("D to go right.");
-    Serial.println("L to make the arm go down.");
-    Serial.println("D to open the back.");
+    Serial.println("s to back off.");
+    Serial.println("a to go left.");
+    Serial.println("d to go right.");
+    Serial.println("l to make the arm go down.");
+    Serial.println("d to open the back.");
     Serial.println("Run keyboard control");
   }
 
@@ -138,7 +132,7 @@ void arm(){
      servoArm.write(position);
      delay(upspeed);
    }
-   Serial.println("-DONE TURNING-")    
+   Serial.println("-DONE TURNING-");
 }
 
 void back(){
@@ -153,7 +147,7 @@ void back(){
      servoBack.write(position);
      delay(speedBack);
    }   
-   Serial.println("-DONE OPENING/CLOSING-")    
+   Serial.println("-DONE OPENING/CLOSING-");   
 
 }
 
