@@ -20,11 +20,13 @@ Servo servoArm;
 int pinservoArm =  8; //Pin of servo for the ARM (PWM)
 int positionOfArm;
 int uplim = 3; //Position when the arm is at the top
-int lowlim =70; //Position when the arm is at the bottom
-int upspeed = 1;
+int lowlim =300; //Position when the arm is at the bottom
+int upspeedFirstPart = 10;
+int upspeedSecondPart = 1;
 int downspeed = 10;
 int setspeed = 10;
 int waitingOnBottleTime = 1000; //Le temps attendu sur la bouteille
+int intermediatePosition = 30;
 
 Servo servoBack;
 int pinServoBack = 7; //Pin of servo for the back (PWM)
@@ -39,7 +41,7 @@ int E1 = 4;     //M1 Speed Control (PWM)
 int M1 = 27;     //M1 Direction Control (Digital)
 int E2 = 5; //M2 Speed Control (PWM)
 int M2 = 29; //M2 Direction control (Digital)
-int speedForward = 150; //Speed moving forward between 0 and 255
+int speedForward = 100; //Speed moving forward between 0 and 255
 int speedBackward = 150; //Speed moving backward between 0 and 255
 void setup(void)
 {
@@ -89,7 +91,7 @@ void loop(void)
         break;
       case 's'://Move Backward
         Serial.println("Move backward");
-        back_off (speedBackward, speedBackward);   //move back in max speed
+        back_off (speedBackward, speedForward);   //move back in max speed
         break;
       case 'a'://Turn Left
         turn_L (100,100);
@@ -103,6 +105,21 @@ void loop(void)
       case 'b'://Back Opens Up
         back();
         break;
+      case 'p':
+        speedForward+=10;
+
+        Serial.println("Speed : ");
+        Serial.println(speedForward);
+        advance (speedForward, speedForward);
+        break;
+      case 'o':
+        speedForward-=10;
+        
+        Serial.println("Speed : ");
+        Serial.println(speedForward);
+        advance (speedForward, speedForward);
+        break;
+      
       case 'x':
         stop();
         break;
@@ -128,9 +145,13 @@ void arm(){
      delay(downspeed);
    }          
    delay(waitingOnBottleTime);
-   for (int position = lowlim; position > uplim; position--) {
+   for (int position = lowlim; position > intermediatePosition; position--) {
      servoArm.write(position);
-     delay(upspeed);
+     delay(upspeedFirstPart);
+   }
+   for (int position = intermediatePosition; position > uplim; position--) {
+     servoArm.write(position);
+     delay(upspeedSecondPart);
    }
    Serial.println("-DONE TURNING-");
 }
@@ -161,7 +182,7 @@ void stop(void)                    //Stop
 void advance(char a, char b)          //Move forward
 {
   analogWrite (E1,a);      //PWM Speed Control
-  digitalWrite(M1,HIGH);
+  digitalWrite(M1,LOW);
   analogWrite (E2,b);      
   digitalWrite(M2,HIGH);
 
@@ -169,7 +190,7 @@ void advance(char a, char b)          //Move forward
 void back_off (char a, char b)          //Move backward
 {
   analogWrite (E1,a);
-  digitalWrite(M1,LOW);
+  digitalWrite(M1,HIGH);
   analogWrite (E2,b);
   digitalWrite(M2,LOW);
 }
