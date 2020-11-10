@@ -1,8 +1,4 @@
-    
-/*
-Gy-26 - Compass.
-Criado por Igor Araujo - www.igoraraujo.eng.br - 2012
-*/
+
 char valeurByte[8];
 int angle = 0;
 int stack =0;
@@ -12,7 +8,7 @@ int waitingBetweenAngle = 300; //Waiting time between output each value
 void setup() {
 
   Serial.begin(9600);
-  Serial2.begin(9600); //Compass as a Baud Rate of 9600
+  Serial2.begin(9600); //Compass has a Baud Rate of 9600
 
 }
 
