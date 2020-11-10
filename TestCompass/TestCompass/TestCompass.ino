@@ -3,40 +3,40 @@
 Gy-26 - Compass.
 Criado por Igor Araujo - www.igoraraujo.eng.br - 2012
 */
-
-char valorbyte[8];
-int graus = 0;
-int contador = 0;
-byte valor = 0;
+char valeurByte[8];
+int angle = 0;
+int stack =0;
+boolean readByte = false;
+int waitingBetweenAngle = 300; //Waiting time between output each value
 
 void setup() {
 
   Serial.begin(9600);
-  Serial2.begin(9600);
+  Serial2.begin(9600); //Compass as a Baud Rate of 9600
 
 }
 
 void loop() {
 
-  leitura();
+  compass();
 
 }
 
-void leitura() {
+void compass() {
 
-  valor = 0;
-
-  Serial2.write(0x31);
-  while (valor == 0) {
+  value = false;
+  Serial2.write(0x31); //Asking for the angle, for each command sent you get 8 byte as an answer
+  //First byte, enter => New Line => hundreds of angle => tens of angle => bits of angle => Decimal point of angle => Decimal of angle => Calibrate sum
+  while (!value) {
     if (Serial2.available()) {
-      valorbyte[contador] = Serial2.read();
-      contador = (contador + 1) % 8;
-      if (contador == 0) {
-        graus = (valorbyte[2] - 48) * 100 + (valorbyte[3] - 48) * 10 + (valorbyte[4] - 48);
-        valor = 1;
+      valeurByte[stack] = Serial2.read(); //Read the value & stacks it
+      stack = (stack + 1) % 8; //Allows to read the full 8 bytes
+      if (stack == 0) {
+        angle = (valeurByte[2] - 48) * 100 + (valeurByte[3] - 48) * 10 + (valeurByte[4] - 48); //Computes the angle using the read bytes 
+        value = true;
       }
     }
   }
-  Serial.println(graus);
-  delay(300);
+  Serial.println(angle);
+  delay(waitingBetweenAngle);
 }
