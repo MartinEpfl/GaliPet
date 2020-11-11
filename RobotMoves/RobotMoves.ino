@@ -169,6 +169,15 @@ void back(){
      delay(speedBack);
    }   
    Serial.println("-DONE OPENING/CLOSING-");   
+}
+
+
+void encoderInit(){
+  directionRead = true;
+  pinMode(encoder0pinA, INPUT);
+  pinMode(encoder0pinB, INPUT);
+  encoder0PinALast = digitalRead(encoder0pinA);
+  attachInterrupt(digitalPinToInterrupt(encoder0pinA), wheelSpeed, CHANGE);
 
 }
 
@@ -209,4 +218,21 @@ void turn_R (char a,char b)             //Turn Right
   digitalWrite(M1,HIGH);
   analogWrite (E2,b);
   digitalWrite(M2,LOW);
+}
+
+void wheelSpeed(){
+
+  int aState = digitalRead(encoder0pinA);
+  if((encoder0PinALast == LOW) && aState == HIGH){
+    int val = digitalRead(encoder0pinB);
+    if(val == LOW && direction_){
+      direction_ = false;
+      }
+    else if(val==HIGH && !direction_){
+      direction_ = true;
+      }
+  }
+  encoder0PinALast = aState;
+  if(!direction_) duration++;
+  else duration--;
 }
