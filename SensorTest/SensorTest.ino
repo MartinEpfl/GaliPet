@@ -1,3 +1,4 @@
+
 #include <SharpIR.h>
 
 #include <SharpIR.h>
@@ -59,7 +60,7 @@ void loop() {
   Serial.print("Mean distance: ");
   Serial.print(distance_cm);
   Serial.println(" cm");
-  delay(1000);
+  delay(500);
   }
 /*view raw_82_Sharp_Distance_Sensor_01.ino hosted with ❤ by GitHub
 */
