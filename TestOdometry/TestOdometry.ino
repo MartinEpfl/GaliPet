@@ -7,28 +7,50 @@ const byte encoder0pinB = 3;
 byte encoder0PinALast;
 double duration;
 boolean directionRead = true;
-int timeWaiting = 1000;
+int timeWaiting = 60000; //Tourne pendant une minute
 unsigned long previousTime = millis();
 unsigned long currentTime = millis();
 unsigned long diffTime = currentTime - previousTime;
+int index = 0;
+int analogValues[7] = {105, 130, 155, 180, 205, 230,255};
+int speedValues[7] = {0,0,0,0,0,0,0};
 void setup() {
   Serial.begin(9600);
   encoderInit();
 
   pinMode(M1, OUTPUT);
   digitalWrite(M1, HIGH);
-  analogWrite(E1, 100);
+
  
 }
 
 void loop() {
-  Serial.println("Pulse :");
-  Serial.println((1000*PI*12*duration/24)/75/diffTime);
+  Serial.println("Speed :");
+  Serial.println((1000*PI*12*duration/24)/75/(60*5));
   duration = 0;
-  delay(timeWaiting);
-  currentTime = millis();
-  diffTime = currentTime - previousTime;
-  previousTime = currentTime;
+  if(index < 7){
+      analogWrite(E1, analogValues[index]);
+     delay(timeWaiting);    
+     speedValues[index] = (1000*PI*12*duration/24)/75/(60);
+     index++;
+  }
+  else if(index==7){
+    analogWrite(E1, 0);
+    Serial.println("DONE : Analog Values :");
+    for(int i = 0; i < 7; i++)
+    {
+        Serial.println(analogValues[i]);
+    }
+    Serial.println("Speed values in cm/s");
+    for(int i = 0; i < 7; i++)
+    {
+        Serial.println(speedValues[i]);
+    }
+  }
+ // delay(timeWaiting);
+//  currentTime = millis();
+ // diffTime = currentTime - previousTime;
+ // previousTime = currentTime;
  // Serial.print("Diff of time is :");
  // Serial.println(diffTime);
 }
