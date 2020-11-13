@@ -5,33 +5,36 @@ int M1 = 27;     //M1 Direction Control (Digital)
 const byte encoder0pinA =  2;
 const byte encoder0pinB = 3;
 byte encoder0PinALast;
-double duration;
+double duration = 0;
 boolean directionRead = true;
-int timeWaiting = 60000; //Tourne pendant une minute
+unsigned long timeWaiting = 45000; //Tourne pendant une minute
 unsigned long previousTime = millis();
 unsigned long currentTime = millis();
 unsigned long diffTime = currentTime - previousTime;
 int index = 0;
 int analogValues[7] = {105, 130, 155, 180, 205, 230,255};
-int speedValues[7] = {0,0,0,0,0,0,0};
+double speedValues[7] = {0,0,0,0,0,0,0};
 void setup() {
   Serial.begin(9600);
   encoderInit();
-
+  pinMode(E1, OUTPUT);
   pinMode(M1, OUTPUT);
+  
   digitalWrite(M1, HIGH);
 
  
 }
 
 void loop() {
-  Serial.println("Speed :");
-  Serial.println((1000*PI*12*duration/24)/75/(60*5));
+  //Serial.println("Speed :");
+  //Serial.println((1000*PI*12*duration/24)/75/(timeWaiting));
   duration = 0;
   if(index < 7){
       analogWrite(E1, analogValues[index]);
      delay(timeWaiting);    
-     speedValues[index] = (1000*PI*12*duration/24)/75/(60);
+     speedValues[index] = (1000*PI*12*duration/24)/75/(timeWaiting);
+     Serial.print("Last speed : ");
+     Serial.println(speedValues[index]);
      index++;
   }
   else if(index==7){
@@ -46,6 +49,7 @@ void loop() {
     {
         Serial.println(speedValues[i]);
     }
+    index++;
   }
  // delay(timeWaiting);
 //  currentTime = millis();
