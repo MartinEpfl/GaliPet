@@ -1,10 +1,10 @@
-
+//DATASHEET https://www.elechouse.com/elechouse/images/product/GY-26-USART%20Digital%20Compass/gy-26%20manual.pdf
 char valeurByte[8];
 int angle = 0;
 int stack =0;
 boolean readByte = false;
 int waitingBetweenAngle = 300; //Waiting time between output each value
-
+boolean value = true;
 void setup() {
 
   Serial.begin(9600);
