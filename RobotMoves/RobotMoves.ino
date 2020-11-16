@@ -29,14 +29,14 @@ int waitingOnBottleTime = 1000; //Le temps attendu sur la bouteille
 int intermediatePosition = 30;
 
 Servo servoBack;
-int pinServoBack = 7; //Pin of servo for the back (PWM)
+int pinServoBack = 9; //Pin of servo for the back (PWM)
 int positionOfBack;
 int uplim_b = 70; //Position of back when close
 int lowlim_b = 0; //Position of back when open
 int speedBack = 20; //Speed back is opening/closing
 int waitingBottleOut = 3000; //Waiting for bottle to go out
 
-//Motors, M1 is left wheel,M2 is right wheel
+//Motors, M1 is left wheel, M2 is right wheel
 int E1 = 6;     //M1 Speed Control (PWM)
 int M1 = 27;     //M1 Direction Control (Digital)
 int E2 = 7; //M2 Speed Control (PWM)
