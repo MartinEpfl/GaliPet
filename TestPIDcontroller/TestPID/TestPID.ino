@@ -1,13 +1,13 @@
 #include <PID_v1.h>
 
 
-int E1 = 4;     //M1 Speed Control (PWM)
+int E1 = 6;     //M1 Speed Control (PWM)
 int M1 = 27;     //M1 Direction Control (Digital)
 
 
 // Définition des variables pour l'encodeur
-const byte encoder0pinA =  2;
-const byte encoder0pinB = 3;
+const byte encoder0pinA =  3;
+const byte encoder0pinB = 4;
 byte encoder0PinALast;
 double ticks = 0;
 boolean directionRead = true;
@@ -19,9 +19,9 @@ unsigned long diffTime = currentTime - previousTime; // temps calculé par l'ard
 
 // Définition des variables pour le PID
 double motorspeed = 0;
-double setspeed = 70;
+double setspeed = 60;
 double pwmOut = 0;
-PID myPID(&motorspeed, &pwmOut, &setspeed,10,0,0.5, DIRECT);
+PID myPID(&motorspeed, &pwmOut, &setspeed,5,1,0.005, DIRECT);
 
 
 void setup() {
@@ -50,11 +50,15 @@ void loop() {
   motorspeed = (PI*12)*(ticks/(24*75))*(1000/diffTime);
   Serial.print(motorspeed);
   Serial.print("  ");
-  Serial.println(currentTime);    
-  ticks = 0;
+  Serial.println(pwmOut);
 
+//  Serial.print("  ");
+ // Serial.println(currentTime);    
+  ticks = 0;
+  delay(20);
   myPID.Compute();
   analogWrite(E1, pwmOut);
+  
 
   
 
