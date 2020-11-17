@@ -17,6 +17,7 @@
 byte incomingByte; //Byte being read from user
 //All the speeds are in ms/angle (it is not a speed I know it's the inverse of a speed
 
+
 Servo servoArm;
 int pinservoArm =  8; //Pin of servo for the ARM (PWM)
 int positionOfArm;
@@ -72,6 +73,17 @@ unsigned long previousTime = millis();
 unsigned long currentTime = millis();
 unsigned long diffTime = currentTime - previousTime;
 
+//Robot position (odometry)
+double x = 0; //Initialize position
+double y = 0;
+double angle = PI/2; //Initial Angle (delta)
+double phi = 0;
+double distanceLeft = speedWheelLeft * diffTime; //Distance travelled by the left wheel
+double distanceRight = speedWheelRight * diffTime;
+double distanceCenter = (distanceLeft + distanceRight)/2; //By the center of the robot (between the two wheels)
+double sizeBetweenWheels = 40; //Distance between the two wheels (TODO => CHANGE)
+
+
 void setup(void)
 {
   Serial.begin(57600);      //Set Baud Rate
@@ -106,9 +118,10 @@ void loop(void)
   currentTime = millis();
   diffTime = currentTime - previousTime;
   durationLeft = leftEncoder.read(); //Reads the left accumulated encodeur
-  durationRight = rightEncoder.read() //Reads the value accumulated on the right encodeur
+  durationRight = rightEncoder.read(); //Reads the value accumulated on the right encodeur
   speedWheelLeft = factorPulseToSpeed*durationLeft/diffTime; //  cm/ms
   speedWheelRight = factorPulseToSpeed*durationRight/diffTime;//  cm/ms
+  odometry();
   leftEncoder.write(0); //Resets the accumulators to 0
   rightEncoder.write(0);
   delay(100); //Needed because otherwise our loop function goes too fast
@@ -168,6 +181,16 @@ void loop(void)
     Serial.println("Run keyboard control");
   }
 
+}
+void odometry(){
+  distanceLeft = speedWheelLeft * diffTime; //Distance travelled by the left wheel
+  distanceRight = speedWheelRight * diffTime;
+  distanceCenter = (distanceLeft + distanceRight)/2;    
+  phi = (distanceRight - distanceLeft)/sizeBetweenWheels;
+  x = x + distanceCenter*cos(angle);
+  y = y + distanceCenter*sin(angle);
+  angle = angle + phi; //New angle for our robot, to calibrate with the compass
+  
 }
 
 void arm(){
