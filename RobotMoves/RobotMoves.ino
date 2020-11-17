@@ -1,3 +1,4 @@
+#include <Encoder.h>
 #include <Servo.h>
 //TODO => CHECK POSITION DE REPOS POUR LE BACK, 180 OU 0? 
 //En fonction faut changer le setup et la fonction back
@@ -45,26 +46,26 @@ int speedForward = 100; //Speed moving forward between 0 and 255
 int speedBackward = 150; //Speed moving backward between 0 and 255
 double diameterWheels = 24; //cm
 double gearRatio = 74.83; //gear ratio of our pololu;
-double countsPerRevolution = 24;
+double countsPerRevolution = 48;
 const double factorPulseToSpeed = 1000*PI*diameterWheels/(countsPerRevolution*gearRatio);
 
 //Motors Encodeurs
+
+
 //Left wheel
-const byte leftEncoder0pinA =  2;//Pin for left motor Encodeur  (must be a pin to use interrupt)
+const byte leftEncoder0pinA =  3;//Pin for left motor Encodeur  (must be a pin to use interrupt)
 const byte leftEncoder0pinB = 4;//Second pin
-byte leftEncoder0pinALast;
 double durationLeft = 0;
-boolean directionReadLeft = true;
 double speedWheelLeft = 0;
+Encoder leftEncoder(leftEncoder0pinA,leftEncoder0pinB);
 
 //Right wheel
-const byte rightEncoder0pinA =  3;//first Pin for right motor Encodeur (must be a pin to use interrupt)
+const byte rightEncoder0pinA =  2;//first Pin for right motor Encodeur (must be a pin to use interrupt)
 const byte rightEncoder0pinB = 5;//Second pin
-byte rightEncoder0pinALast;
 double durationRight = 0;
-boolean directionReadRight= true;
 double speedWheelRight = 0;
 
+Encoder rightEncoder(rightEncoder0pinA,rightEncoder0pinB);
 
 //Time between each loop
 unsigned long previousTime = millis();
@@ -88,8 +89,6 @@ void setup(void)
   Serial.println("Reseting the back...");
   servoBack.write(uplim_b);
   Serial.println("DONE");
-  leftEncoderInit();
-  rightEncoderInit();
   Serial.println("Controls :");
   Serial.println("w to advance.");
   Serial.println("s to back off.");
@@ -98,6 +97,7 @@ void setup(void)
   Serial.println("l to make the arm go down.");
   Serial.println("d to open the back.");
   Serial.println("Run keyboard control");
+
 }
 
 void loop(void)
@@ -105,10 +105,13 @@ void loop(void)
   previousTime = currentTime;
   currentTime = millis();
   diffTime = currentTime - previousTime;
+  durationLeft = leftEncoder.read(); //Reads the left accumulated encodeur
+  durationRight = rightEncoder.read() //Reads the value accumulated on the right encodeur
   speedWheelLeft = factorPulseToSpeed*durationLeft/diffTime; //  cm/ms
   speedWheelRight = factorPulseToSpeed*durationRight/diffTime;//  cm/ms
-  durationLeft = 0;
-  durationRight = 0; 
+  leftEncoder.write(0); //Resets the accumulators to 0
+  rightEncoder.write(0);
+  delay(100); //Needed because otherwise our loop function goes too fast
   if(Serial.available()){
     char val = Serial.read();
     if(val != -1)
@@ -206,59 +209,6 @@ void armInit(){
         delay(setspeed);
   } 
 }
-
-//Initialize the left encoder
-void leftEncoderInit(){
-  directionReadLeft = true;
-  pinMode(leftEncoder0pinA, INPUT);
-  pinMode(leftEncoder0pinB, INPUT);
-  leftEncoder0pinALast = digitalRead(leftEncoder0pinA);
-  attachInterrupt(digitalPinToInterrupt(leftEncoder0pinA), leftWheelSpeed, CHANGE);
-}
-
-//Initialize the right encoder
-void rightEncoderInit(){
-  directionReadRight = true;
-  pinMode(rightEncoder0pinA, INPUT);
-  pinMode(rightEncoder0pinB, INPUT);
-  rightEncoder0pinALast = digitalRead(rightEncoder0pinA);
-  attachInterrupt(digitalPinToInterrupt(rightEncoder0pinA), rightWheelSpeed, CHANGE);
-}
-
-//Reads the pulse of the left encoder
-void leftWheelSpeed(){
-  int aStateLeft = digitalRead(leftEncoder0pinA);
-  if((leftEncoder0pinALast == LOW) && aStateLeft == HIGH){
-    int valLeft = digitalRead(leftEncoder0pinB);
-    if(valLeft == LOW && directionReadLeft){
-      directionReadLeft = false;
-      }
-    else if(valLeft==HIGH && !directionReadLeft){
-      directionReadLeft = true;
-      }
-  }
-  leftEncoder0pinALast = aStateLeft;
-  if(!directionReadLeft) durationLeft++;
-  else durationLeft--;
-}
-
-//Reads the pulse of the right encoder
-void rightWheelSpeed(){
-  int aStateRight = digitalRead(rightEncoder0pinA);
-  if((rightEncoder0pinALast == LOW) && aStateRight == HIGH){
-    int valRight = digitalRead(rightEncoder0pinB);
-    if(valRight == LOW && directionReadRight){
-      directionReadRight = false;
-      }
-    else if(valRight==HIGH && !directionReadRight){
-      directionReadRight = true;
-      }
-  }
-  rightEncoder0pinALast = aStateRight;
-  if(!directionReadRight) durationRight++;
-  else durationRight--;
-}
-
 
 
 void stop(void)                    //Stop
