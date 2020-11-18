@@ -34,11 +34,19 @@
                         // Include the library:
 #include <SharpIR.h>
                         // Define model and input pin:
-#define IRPin A5
-#define model 430
+#define NWIRPin A1
+#define NEIRPin A2
+#define SWIRPin A3
+#define SEIRPin A4
+
+#define model 1080
 
                         // Create variable to store the distance:
-int distance_cm;
+int distanceNW;
+int distanceNE;
+int distanceSW;
+int distanceSE;
+
 /* Model :
   GP2Y0A02YK0F --> 20150
   GP2Y0A21YK0F --> 1080
@@ -46,21 +54,61 @@ int distance_cm;
   GP2YA41SK0F --> 430
 */
                         // Create a new instance of the SharpIR class:
-SharpIR mySensor = SharpIR(IRPin, model);
+SharpIR sensorNW = SharpIR(NWIRPin, model);
+SharpIR sensorNE = SharpIR(NEIRPin, model);
+SharpIR sensorSW = SharpIR(SWIRPin, model);
+SharpIR sensorSE = SharpIR(SEIRPin, model);
+
+
+int const numberOfInputs = 20;
+int count = 0;
+int average = 0;
+
+int numberDetected[numberOfInputs];
 void setup() {
                         // Begin serial communication at a baud rate of 9600:
   Serial.begin(9600);
+
   
 
 }
 void loop() {
                         // Get a distance measurement and store it as distance_cm:
-  distance_cm = mySensor.distance();
+  distanceNW = sensorNW.distance();
+  distanceNE = sensorNE.distance();
+  distanceSW = sensorSW.distance();
+  distanceSE = sensorSE.distance();
+  //Serial.print(distanceNW);
+  Serial.print(" ");
+  //Serial.print(distanceNE);
+  Serial.print(" ");
+ // Serial.print(distanceSW);
+  Serial.print(" ");
+  if(distanceNW<=80 and distanceNW>=5 and count!=numberOfInputs){
+    numberDetected[count] = distanceNW;
+    /*Serial.println("This is numberDetected :");
+    Serial.println(numberDetected[count] );*/
+    count++;
+  }
+  if(count == numberOfInputs){
+      average =0;
+      for(int j=0;j<numberOfInputs;j++){
+        average+=numberDetected[j];
+      }
+      average/=numberOfInputs;
+      count = 0;
+  }
+  Serial.println(average);
+ // Serial.println(distanceSE);
                         // Print the measured distance to the serial monitor:
-  Serial.print("Mean distance: ");
-  Serial.print(distance_cm);
-  Serial.println(" cm");
-  delay(500);
+  if(distanceSE<80 and distanceSE>10 and distanceSW<80 and distanceSW>10){
+    if(distanceNE<80 and distanceNE>10 and distanceNW<80 and distanceNW>10){
+   //  Serial.println("Parpaing found!");
+    }
+     else{ //Serial.println("Bottle found!");
+     }
+    }
+  delay(100);
   }
 /*view raw_82_Sharp_Distance_Sensor_01.ino hosted with ❤ by GitHub
 */
