@@ -1,5 +1,7 @@
 #include <Encoder.h>
 #include <Servo.h>
+#include <Pixy2UART.h>
+
 //TODO => CHECK POSITION DE REPOS POUR LE BACK, 180 OU 0? 
 //En fonction faut changer le setup et la fonction back
 //TODO => Voir si 3 secondes (variable waitingBottleOut)suffisent au robot pour sortir les bouteilles et si la
@@ -83,10 +85,26 @@ double distanceRight = speedWheelRight * diffTime;
 double distanceCenter = (distanceLeft + distanceRight)/2; //By the center of the robot (between the two wheels)
 double sizeBetweenWheels = 40; //Distance between the two wheels (TODO => CHANGE)
 
+//Pixy camera
+Pixy2UART pixy;
+float focalLengthHeight = 232.50; //Maybe we need to be more precise
+float focalLengthWidth = 267.15;
+int pixelsWidth;   //read by the camera
+int pixelsHeight; //read by the camera
+float distanceWidth;   //calculated distance based on the width of the object
+float distanceHeight;  //calculated distance based on the height of the object 
+float averageDistance; //Average of both distances
+float widthOfObject = 13.7; //cm  Real size in cm of the object
+float heightOfObject = 4; //cm 
+const int sizeOfArray = 20;
+double distancesAverage[sizeOfArray];
+double tempDistanceAverage[sizeOfArray];
+double value; //Actual value
+//float distance_ = 30; To use if we want to calibrate the focal length
 
 void setup(void)
 {
-  Serial.begin(57600);      //Set Baud Rate
+  Serial.begin(19200);      //Set Baud Rate
   pinMode(E1, OUTPUT);
   pinMode(M1, OUTPUT);
   pinMode(E2, OUTPUT);
@@ -100,7 +118,9 @@ void setup(void)
   positionOfBack = servoBack.read(); 
   Serial.println("Reseting the back...");
   servoBack.write(uplim_b);
+    
   Serial.println("DONE");
+  pixy.init(); 
   Serial.println("Controls :");
   Serial.println("w to advance.");
   Serial.println("s to back off.");
@@ -124,6 +144,7 @@ void loop(void)
   odometry();
   leftEncoder.write(0); //Resets the accumulators to 0
   rightEncoder.write(0);
+  pixyRead();
   delay(100); //Needed because otherwise our loop function goes too fast
   if(Serial.available()){
     char val = Serial.read();
@@ -192,7 +213,35 @@ void odometry(){
   angle = angle + phi; //New angle for our robot, to calibrate with the compass
   
 }
+void pixyRead(){
+  // grab blocks!
+  pixy.ccc.getBlocks();
+  
+  // If there are detect blocks, print them!
+  if (pixy.ccc.numBlocks)
+  {
 
+    for (i=0; i<pixy.ccc.numBlocks; i++)
+    {
+      pixelsWidth = pixy.ccc.blocks[i].m_width;
+      pixelsHeight = pixy.ccc.blocks[i].m_height;
+      distanceWidth = (focalLengthWidth * widthOfObject) /pixelsWidth;
+      distanceHeight = (focalLengthHeight * heightOfObject) /pixelsHeight;
+      averageDistance = (distanceWidth +distanceHeight)/2;
+      for(int j = 1;j<sizeOfArray;j++){
+        tempDistanceAverage[j] = distancesAverage[j-1];
+      }
+      tempDistanceAverage[0] = averageDistance;
+      for(int j = 0;j<sizeOfArray;j++){
+        distancesAverage[j] = tempDistanceAverage[j];
+        value += distancesAverage[j];
+      }
+      value/=sizeOfArray;
+      Serial.print("This is the value: ");
+      Serial.println(value);
+    }
+  }    
+}
 void arm(){
   stop();
    Serial.println("Arm Turning...");
