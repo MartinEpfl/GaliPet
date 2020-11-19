@@ -1,6 +1,7 @@
+#include <PID_v1.h>
 #include <Encoder.h>
 #include <Servo.h>
-#include <Pixy2UART.h>
+//#include <Pixy2UART.h>
 
 //TODO => CHECK POSITION DE REPOS POUR LE BACK, 180 OU 0? 
 //En fonction faut changer le setup et la fonction back
@@ -15,6 +16,8 @@
 //d  => Droite
 //b => Ouvrir le dos (fait arreter le robot)
 //l => Faire baisser le bras (fait arreter le robot)
+
+//////////////////////////////////////////////////////////////    DECLARATIONS   //////////////////////////////////////////////////////////////
 
 byte incomingByte; //Byte being read from user
 //All the speeds are in ms/angle (it is not a speed I know it's the inverse of a speed
@@ -45,9 +48,10 @@ int E1 = 6;     //M1 Speed Control (PWM)
 int M1 = 27;     //M1 Direction Control (Digital)
 int E2 = 7; //M2 Speed Control (PWM)
 int M2 = 29; //M2 Direction control (Digital)
-int speedForward = 100; //Speed moving forward between 0 and 255
-int speedBackward = 150; //Speed moving backward between 0 and 255
-double diameterWheels = 24; //cm
+int speedForward = 50; //Speed moving forward cm/s
+int speedBackward = 50; //Speed moving backward cm/s
+int speedTurning = 30; //Speed while turning cm/s
+double diameterWheels = 12; //cm
 double gearRatio = 74.83; //gear ratio of our pololu;
 double countsPerRevolution = 48;
 const double factorPulseToSpeed = 1000*PI*diameterWheels/(countsPerRevolution*gearRatio);
@@ -67,7 +71,6 @@ const byte rightEncoder0pinA =  2;//first Pin for right motor Encodeur (must be 
 const byte rightEncoder0pinB = 5;//Second pin
 double durationRight = 0;
 double speedWheelRight = 0;
-
 Encoder rightEncoder(rightEncoder0pinA,rightEncoder0pinB);
 
 //Time between each loop
@@ -84,6 +87,20 @@ double distanceLeft = speedWheelLeft * diffTime; //Distance travelled by the lef
 double distanceRight = speedWheelRight * diffTime;
 double distanceCenter = (distanceLeft + distanceRight)/2; //By the center of the robot (between the two wheels)
 double sizeBetweenWheels = 40; //Distance between the two wheels (TODO => CHANGE)
+
+//PID for motor control
+
+//For the left motor
+double targetSpeedLeft = 0;
+double pwmOutLeft = 0;
+PID leftPID(&speedWheelLeft, &pwmOutLeft, &targetSpeedLeft,5.1,0,0.005, DIRECT); 
+
+//For the right motor
+double targetSpeedRight = 0;
+double pwmOutRight = 0;
+PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight,5.1,0,0.005, DIRECT); 
+
+/*
 
 //Pixy camera
 Pixy2UART pixy;
@@ -102,6 +119,10 @@ double tempDistanceAverage[sizeOfArray];
 double value; //Actual value
 //float distance_ = 30; To use if we want to calibrate the focal length
 
+*/
+
+//////////////////////////////////////////////////////////////    SETUP   //////////////////////////////////////////////////////////////
+
 void setup(void)
 {
   Serial.begin(19200);      //Set Baud Rate
@@ -109,6 +130,8 @@ void setup(void)
   pinMode(M1, OUTPUT);
   pinMode(E2, OUTPUT);
   pinMode(M2, OUTPUT);
+
+  //setting up servos
   servoArm.attach(pinservoArm);
   servoBack.attach(pinServoBack);
   positionOfArm = servoArm.read(); 
@@ -118,9 +141,20 @@ void setup(void)
   positionOfBack = servoBack.read(); 
   Serial.println("Reseting the back...");
   servoBack.write(uplim_b);
-    
   Serial.println("DONE");
-  pixy.init(); 
+
+  
+  // PIDs on
+  leftPID.SetOutputLimits(0, 255);
+  leftPID.SetMode(AUTOMATIC);
+  leftPID.SetSampleTime(10);
+  rightPID.SetOutputLimits(0, 255);
+  rightPID.SetMode(AUTOMATIC);
+  rightPID.SetSampleTime(10);
+  
+
+ // pixy.init(); 
+  
   Serial.println("Controls :");
   Serial.println("w to advance.");
   Serial.println("s to back off.");
@@ -132,20 +166,35 @@ void setup(void)
 
 }
 
+//////////////////////////////////////////////////////////////    LOOP   //////////////////////////////////////////////////////////////
+
 void loop(void)
 {
   previousTime = currentTime;
   currentTime = millis();
   diffTime = currentTime - previousTime;
-  durationLeft = leftEncoder.read(); //Reads the left accumulated encodeur
-  durationRight = rightEncoder.read(); //Reads the value accumulated on the right encodeur
+  
+  durationLeft = abs(leftEncoder.read()); //Reads the left accumulated encodeur
+  durationRight = abs(rightEncoder.read()); //Reads the value accumulated on the right encodeur
   speedWheelLeft = factorPulseToSpeed*durationLeft/diffTime; //  cm/ms
   speedWheelRight = factorPulseToSpeed*durationRight/diffTime;//  cm/ms
   odometry();
   leftEncoder.write(0); //Resets the accumulators to 0
   rightEncoder.write(0);
-  pixyRead();
-  delay(100); //Needed because otherwise our loop function goes too fast
+  
+  Serial.print(pwmOutRight);
+  Serial.print("  ");
+  Serial.print(speedWheelRight);
+  Serial.print("  ");
+  Serial.print(pwmOutLeft);
+  Serial.print("  ");
+  Serial.println(speedWheelLeft);
+    
+//  pixyRead();
+
+  delay(10); //Needed because otherwise our loop function goes too fast
+
+  
   if(Serial.available()){
     char val = Serial.read();
     if(val != -1)
@@ -161,10 +210,10 @@ void loop(void)
         back_off (speedBackward, speedForward);   //move back in max speed
         break;
       case 'a'://Turn Left
-        turn_L (100,100);
+        turn_L (speedTurning, speedTurning);
         break;
       case 'd'://Turn Right
-        turn_R (100,100);
+        turn_R (speedTurning, speedTurning);
         break;
       case 'l'://Arm goes down
         arm();
@@ -202,7 +251,20 @@ void loop(void)
     Serial.println("Run keyboard control");
   }
 
+  leftPID.Compute();
+  rightPID.Compute();
+  analogWrite(E1, pwmOutLeft);
+  analogWrite(E2, pwmOutRight);
+
+
+
 }
+
+//////////////////////////////////////////////////////////////    OTHER FUNCTIONS   //////////////////////////////////////////////////////////////
+
+
+//--------------------------------------ODOMETRY
+
 void odometry(){
   distanceLeft = speedWheelLeft * diffTime; //Distance travelled by the left wheel
   distanceRight = speedWheelRight * diffTime;
@@ -213,6 +275,9 @@ void odometry(){
   angle = angle + phi; //New angle for our robot, to calibrate with the compass
   
 }
+/*
+//--------------------------------------PIXYREAD
+
 void pixyRead(){
   // grab blocks!
   pixy.ccc.getBlocks();
@@ -242,6 +307,10 @@ void pixyRead(){
     }
   }    
 }
+*/
+
+//--------------------------------------ARM
+
 void arm(){
   stop();
    Serial.println("Arm Turning...");
@@ -261,6 +330,8 @@ void arm(){
    Serial.println("-DONE TURNING-");
 }
 
+//--------------------------------------BACK
+
 void back(){
    stop();
    Serial.println("Back opening...");
@@ -275,6 +346,9 @@ void back(){
    }   
    Serial.println("-DONE OPENING/CLOSING-");   
 }
+
+//--------------------------------------ARMINIT
+
 void armInit(){
   for (int positionA = positionOfArm; positionA >= uplim; positionA--) {
         servoArm.write(positionA);
@@ -282,42 +356,76 @@ void armInit(){
   } 
 }
 
+//--------------------------------------STOP
 
-void stop(void)                    //Stop
+void stop(void)  //Stop
 {
+  digitalWrite(M1,LOW);
+  digitalWrite(M2,LOW);
+  targetSpeedLeft = 0;
+  targetSpeedRight = 0;
   digitalWrite(E1,0);
-  digitalWrite(M1,LOW);
   digitalWrite(E2,0);
-  digitalWrite(M2,LOW);
 }
-void advance(char a, char b)          //Move forward
-{
-  analogWrite (E1,a);      //PWM Speed Control
-  digitalWrite(M1,LOW);
-  analogWrite (E2,b);      
-  digitalWrite(M2,HIGH);
 
-}
-void back_off (char a, char b)          //Move backward
+//--------------------------------------ADVANCE
+
+void advance(char a, char b)  //Move forward
 {
-  analogWrite (E1,a);
   digitalWrite(M1,HIGH);
-  analogWrite (E2,b);
   digitalWrite(M2,LOW);
+  
+  targetSpeedLeft = a;
+  targetSpeedRight = b;
+  
+  //analogWrite (E1,a);      //PWM Speed Control
+  //analogWrite (E2,b);      
+  
+
 }
 
-void turn_L (char a,char b)             //Turn Left
+//--------------------------------------BACK OFF
+
+void back_off (char a, char b) //Move backward
 {
-  analogWrite (E1,a);
   digitalWrite(M1,LOW);
-  analogWrite (E2,b);
   digitalWrite(M2,HIGH);
+  
+  targetSpeedLeft = a;
+  targetSpeedRight = b;
+  
+  //analogWrite (E1,a); 
+  //analogWrite (E2,b);
+  
 }
 
-void turn_R (char a,char b)             //Turn Right
+//--------------------------------------TURN LEFT
+
+void turn_L (char a,char b)  //Turn Left
 {
-  analogWrite (E1,a);
-  digitalWrite(M1,HIGH);
-  analogWrite (E2,b);
+  digitalWrite(M1,LOW);
   digitalWrite(M2,LOW);
+  
+  targetSpeedLeft = a;
+  targetSpeedRight = b;
+
+  //analogWrite (E1,a);
+  //analogWrite (E2,b);
+  
+}
+
+
+//--------------------------------------TURN RIGHT
+
+void turn_R (char a,char b)  //Turn Right
+{
+  digitalWrite(M1,HIGH);
+  digitalWrite(M2,HIGH);
+  
+  targetSpeedLeft = a;
+  targetSpeedRight = b;
+  
+  //analogWrite (E1,a);
+  //analogWrite (E2,b);
+  
 }

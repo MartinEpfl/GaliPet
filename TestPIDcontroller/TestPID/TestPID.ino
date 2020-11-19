@@ -19,7 +19,7 @@ unsigned long diffTime = currentTime - previousTime; // temps calculé par l'ard
 
 // Définition des variables pour le PID
 double motorspeed = 0;
-double setspeed = 10;
+double setspeed = 15;
 double pwmOut = 0;
 PID myPID(&motorspeed, &pwmOut, &setspeed,5.1,2,0.005, DIRECT);
 
