@@ -44,7 +44,7 @@ int E1 = 6;     //M1 Speed Control (PWM)
 int M1 = 27;     //M1 Direction Control (Digital)
 int E2 = 7; //M2 Speed Control (PWM)
 int M2 = 29; //M2 Direction control (Digital)
-int speedForward = 50 ; //Speed moving forward cm/s
+int speedForward = 30 ; //Speed moving forward cm/s
 int speedBackward = 50; //Speed moving backward cm/s
 int speedTurning = 30; //Speed while turning cm/s
 double diameterWheels = 12; //cm
@@ -91,7 +91,7 @@ double sizeBetweenWheels = 38.3; //Distance between the two wheels (TODO => CHAN
 //For the left motor
 double targetSpeedLeft = 0; //
 double pwmOutLeft = 0;
-PID leftPID(&speedWheelLeft, &pwmOutLeft, &targetSpeedLeft,5.1,0,0.005, DIRECT); 
+PID leftPID(&speedWheelLeft, &pwmOutLeft, &targetSpeedLeft,5.1,0.000,0.005, DIRECT); 
 
 //For the right motor
 double targetSpeedRight = 0;
@@ -165,9 +165,13 @@ void setup(void)
 }
 
 //////////////////////////////////////////////////////////////    LOOP   //////////////////////////////////////////////////////////////
-
+double valueRatio[50];
+int indexRatio=0;;
 void loop(void)
 {
+  valueRatio[indexRatio%50] = speedWheelLeft/targetSpeedLeft;
+  indexRatio++;
+  
   previousTime = currentTime;
   currentTime = millis();
   diffTime = currentTime - previousTime;
@@ -188,7 +192,14 @@ void loop(void)
   Serial.print("  ");
   Serial.println(speedWheelLeft);
     */
-  
+  double sum_num = 0;
+  for(int t = 0;t<50;t++){
+        sum_num = sum_num + valueRatio[t]    ;       
+          Serial.println(sum_num);
+  }
+    int avg = sum_num / 50;
+  Serial.println(avg);
+
 //  pixyRead();
  
   delay(10); //Needed because otherwise our loop function goes too fast
@@ -238,6 +249,26 @@ void loop(void)
       case 'x':
         stop();
         break;
+      case '+': 
+        leftPID.SetTunings(leftPID.GetKp()+0.5, leftPID.GetKi(),leftPID.GetKd()); 
+        Serial.print("leftPID P value is now : "); 
+        Serial.println(leftPID.GetKp()); 
+        break;      
+      case '-': 
+        leftPID.SetTunings(leftPID.GetKp()-0.5, leftPID.GetKi(),leftPID.GetKd()); 
+        Serial.print("leftPID P value is now : "); 
+        Serial.println(leftPID.GetKp()); 
+        break; 
+      case '6': 
+        leftPID.SetTunings(leftPID.GetKp(), leftPID.GetKi(),leftPID.GetKd()+0.001); 
+        Serial.print("leftPID D value is now : "); 
+        Serial.println(leftPID.GetKd()); 
+        break; 
+      case '9': 
+        leftPID.SetTunings(leftPID.GetKp(), leftPID.GetKi(),leftPID.GetKd()-0.001); 
+        Serial.print("leftPID D value is now : "); 
+        Serial.println(leftPID.GetKd());  
+        break; 
       }
     }
     else stop();
@@ -263,10 +294,11 @@ void loop(void)
 
 
 //--------------------------------------ODOMETRY
-
+double totalDistanceLeft=0;
 void odometry(){
   if(digitalRead(M1) == HIGH){
     distanceLeft = speedWheelLeft * diffTime/1000; //Distance travelled by the left wheel   
+    totalDistanceLeft+=distanceLeft;
   }
   else{
     distanceLeft = -speedWheelLeft * diffTime/1000; //Distance travelled by the left wheel   
@@ -283,13 +315,13 @@ void odometry(){
   x = x + distanceCenter*cos(angle);
   y = y + distanceCenter*sin(angle);
   angle = angle + phi; //New angle for our robot, to calibrate with the compass
-  
+  /*
   Serial.print("This is x position :");
   Serial.print(x);
   Serial.print(" and this y position :");
   Serial.print(y);
   Serial.print(" and this this the angle delta : ");
-  Serial.println(angle);
+  Serial.println(angle);*/
 }
 /*
 //--------------------------------------PIXYREAD
