@@ -34,9 +34,9 @@ int intermediatePosition = 1000;
 Servo servoBack;
 int pinServoBack = 9; //Pin of servo for the back (PWM)
 int positionOfBack;
-int uplim_b = 90; //Position of back when close
+int uplim_b = 70; //Position of back when close
 int lowlim_b = 0; //Position of back when open
-int speedBack = 20; //Speed back is opening/closing
+int speedBack = 50; //Speed back is opening/closing
 int waitingBottleOut = 3000; //Waiting for bottle to go out
 
 //Motors, M1 is left wheel, M2 is right wheel
@@ -50,7 +50,7 @@ int speedTurning = 30; //Speed while turning cm/s
 double diameterWheels = 12; //cm
 double gearRatio = 74.83; //gear ratio of our pololu;
 double countsPerRevolution = 48;
-const double factorPulseToSpeed = 1000*PI*diameterWheels/(countsPerRevolution*gearRatio);
+const double factorPulseToDistance = PI*diameterWheels/(countsPerRevolution*gearRatio);
 
 //Motors Encodeurs
 
@@ -91,12 +91,12 @@ double sizeBetweenWheels = 38.3; //Distance between the two wheels (TODO => CHAN
 //For the left motor
 double targetSpeedLeft = 0; //
 double pwmOutLeft = 0;
-PID leftPID(&speedWheelLeft, &pwmOutLeft, &targetSpeedLeft,5.1,0.000,0.005, DIRECT); 
+PID leftPID(&speedWheelLeft, &pwmOutLeft, &targetSpeedLeft,5.1,0.5,0.005, DIRECT); 
 
 //For the right motor
 double targetSpeedRight = 0;
 double pwmOutRight = 0;
-PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight,5.1,0,0.005, DIRECT); 
+PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight,5.1,0.5,0.005, DIRECT); 
 
 /*
 
@@ -138,7 +138,7 @@ void setup(void)
   Serial.println("DONE");
   positionOfBack = servoBack.read(); 
   Serial.println("Reseting the back...");
-  servoBack.write(uplim_b);
+  servoBack.write(70);
   Serial.println("DONE");
 
   
@@ -165,12 +165,11 @@ void setup(void)
 }
 
 //////////////////////////////////////////////////////////////    LOOP   //////////////////////////////////////////////////////////////
-double valueRatio[50];
-int indexRatio=0;;
+
 void loop(void)
 {
-  valueRatio[indexRatio%50] = speedWheelLeft/targetSpeedLeft;
-  indexRatio++;
+  Serial.println(speedWheelLeft - speedWheelRight);
+
   
   previousTime = currentTime;
   currentTime = millis();
@@ -178,8 +177,8 @@ void loop(void)
   
   durationLeft = abs(leftEncoder.read()); //Reads the left accumulated encodeur
   durationRight = abs(rightEncoder.read()); //Reads the value accumulated on the right encodeur
-  speedWheelLeft = factorPulseToSpeed*durationLeft/diffTime; //  cm/s
-  speedWheelRight = factorPulseToSpeed*durationRight/diffTime;//  cm/s
+  speedWheelLeft = 1000*factorPulseToDistance*durationLeft/diffTime; //  cm/s
+  speedWheelRight = 1000*factorPulseToDistance*durationRight/diffTime;//  cm/s
   odometry();
   leftEncoder.write(0); //Resets the accumulators to 0
   rightEncoder.write(0);
@@ -192,13 +191,7 @@ void loop(void)
   Serial.print("  ");
   Serial.println(speedWheelLeft);
     */
-  double sum_num = 0;
-  for(int t = 0;t<50;t++){
-        sum_num = sum_num + valueRatio[t]    ;       
-          Serial.println(sum_num);
-  }
-    int avg = sum_num / 50;
-  Serial.println(avg);
+
 
 //  pixyRead();
  
@@ -294,20 +287,21 @@ void loop(void)
 
 
 //--------------------------------------ODOMETRY
-double totalDistanceLeft=0;
+double totalDistance = 0;
 void odometry(){
   if(digitalRead(M1) == HIGH){
-    distanceLeft = speedWheelLeft * diffTime/1000; //Distance travelled by the left wheel   
-    totalDistanceLeft+=distanceLeft;
+    distanceLeft = factorPulseToDistance*durationLeft; //Distance travelled by the left wheel   
+        totalDistance +=distanceLeft;
+
   }
   else{
-    distanceLeft = -speedWheelLeft * diffTime/1000; //Distance travelled by the left wheel   
+    distanceLeft = -factorPulseToDistance*durationLeft; //Distance travelled by the left wheel   
   }
   if(digitalRead(M2) == LOW){
-    distanceRight = speedWheelRight * diffTime/1000; //Distance travelled by the right wheel   
+    distanceRight = factorPulseToDistance*durationRight; //Distance travelled by the right wheel   
   }
   else{
-    distanceRight = -speedWheelRight * diffTime/1000; //Distance travelled by the right wheel   
+    distanceRight = -factorPulseToDistance*durationRight; //Distance travelled by the right wheel   
   } 
 
   distanceCenter = (distanceLeft + distanceRight)/2;    
@@ -386,11 +380,15 @@ void back(){
    Serial.println("Back opening...");
    for (int position = uplim_b; position > lowlim_b; position--) {  
      servoBack.write(position);
+        Serial.println(servoBack.read());
+
      delay(speedBack);
    }          
    delay(waitingBottleOut);
    for (int position = lowlim_b; position < uplim_b; position++) {
      servoBack.write(position);
+        Serial.println(servoBack.read());
+
      delay(speedBack);
    }   
    Serial.println("-DONE OPENING/CLOSING-");   
