@@ -1,13 +1,9 @@
+#include <Encoder.h>
+
 #include <PID_v1.h>
 #include <Encoder.h>
 #include <Servo.h>
 //#include <Pixy2UART.h>
-
-//TODO => CHECK POSITION DE REPOS POUR LE BACK, 180 OU 0? 
-//En fonction faut changer le setup et la fonction back
-//TODO => Voir si 3 secondes (variable waitingBottleOut)suffisent au robot pour sortir les bouteilles et si la
-//vitesse est bonne (du dos)
-//TODO => Verifier les vitesse du bras, il devrait etre plus rapide pour monter que pour descendre.
 
 //Commandes : 
 //w => Avancer
@@ -26,21 +22,21 @@ byte incomingByte; //Byte being read from user
 Servo servoArm;
 int pinservoArm =  8; //Pin of servo for the ARM (PWM)
 int positionOfArm;
-int uplim = 3; //Position when the arm is at the top
-int lowlim =300; //Position when the arm is at the bottom
-int upspeedFirstPart = 10;
-int upspeedSecondPart = 1;
-int downspeed = 10;
+int uplim = 500; //Position when the arm is at the top
+int lowlim =2700; //Position when the arm is at the bottom
+int upspeedFirstPart = 3;
+int upspeedSecondPart = 3;
+int downspeed =1;
 int setspeed = 10;
-int waitingOnBottleTime = 1000; //Le temps attendu sur la bouteille
-int intermediatePosition = 30;
+int waitingOnBottleTime = 1000; //Time waited on the bottle
+int intermediatePosition = 1000;
 
 Servo servoBack;
 int pinServoBack = 9; //Pin of servo for the back (PWM)
 int positionOfBack;
 int uplim_b = 70; //Position of back when close
 int lowlim_b = 0; //Position of back when open
-int speedBack = 20; //Speed back is opening/closing
+int speedBack = 50; //Speed back is opening/closing
 int waitingBottleOut = 3000; //Waiting for bottle to go out
 
 //Motors, M1 is left wheel, M2 is right wheel
@@ -48,13 +44,13 @@ int E1 = 6;     //M1 Speed Control (PWM)
 int M1 = 27;     //M1 Direction Control (Digital)
 int E2 = 7; //M2 Speed Control (PWM)
 int M2 = 29; //M2 Direction control (Digital)
-int speedForward = 50; //Speed moving forward cm/s
+int speedForward = 30 ; //Speed moving forward cm/s
 int speedBackward = 50; //Speed moving backward cm/s
 int speedTurning = 30; //Speed while turning cm/s
 double diameterWheels = 12; //cm
 double gearRatio = 74.83; //gear ratio of our pololu;
 double countsPerRevolution = 48;
-const double factorPulseToSpeed = 1000*PI*diameterWheels/(countsPerRevolution*gearRatio);
+const double factorPulseToDistance = PI*diameterWheels/(countsPerRevolution*gearRatio);
 
 //Motors Encodeurs
 
@@ -86,19 +82,21 @@ double phi = 0;
 double distanceLeft = speedWheelLeft * diffTime; //Distance travelled by the left wheel
 double distanceRight = speedWheelRight * diffTime;
 double distanceCenter = (distanceLeft + distanceRight)/2; //By the center of the robot (between the two wheels)
-double sizeBetweenWheels = 40; //Distance between the two wheels (TODO => CHANGE)
+double distanceSinceBeginning=0;
+double sizeBetweenWheels = 38.3; //Distance between the two wheels (TODO => CHANGE)
+
 
 //PID for motor control
 
 //For the left motor
-double targetSpeedLeft = 0;
+double targetSpeedLeft = 0; //
 double pwmOutLeft = 0;
-PID leftPID(&speedWheelLeft, &pwmOutLeft, &targetSpeedLeft,5.1,0,0.005, DIRECT); 
+PID leftPID(&speedWheelLeft, &pwmOutLeft, &targetSpeedLeft,5.1,0.5,0.005, DIRECT); 
 
 //For the right motor
 double targetSpeedRight = 0;
 double pwmOutRight = 0;
-PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight,5.1,0,0.005, DIRECT); 
+PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight,5.1,0.5,0.005, DIRECT); 
 
 /*
 
@@ -136,11 +134,11 @@ void setup(void)
   servoBack.attach(pinServoBack);
   positionOfArm = servoArm.read(); 
   Serial.println("Reseting the arm...");
-  armInit();
+  servoArm.writeMicroseconds(500);
   Serial.println("DONE");
   positionOfBack = servoBack.read(); 
   Serial.println("Reseting the back...");
-  servoBack.write(uplim_b);
+  servoBack.write(70);
   Serial.println("DONE");
 
   
@@ -170,18 +168,21 @@ void setup(void)
 
 void loop(void)
 {
+  Serial.println(speedWheelLeft - speedWheelRight);
+
+  
   previousTime = currentTime;
   currentTime = millis();
   diffTime = currentTime - previousTime;
   
   durationLeft = abs(leftEncoder.read()); //Reads the left accumulated encodeur
   durationRight = abs(rightEncoder.read()); //Reads the value accumulated on the right encodeur
-  speedWheelLeft = factorPulseToSpeed*durationLeft/diffTime; //  cm/ms
-  speedWheelRight = factorPulseToSpeed*durationRight/diffTime;//  cm/ms
+  speedWheelLeft = 1000*factorPulseToDistance*durationLeft/diffTime; //  cm/s
+  speedWheelRight = 1000*factorPulseToDistance*durationRight/diffTime;//  cm/s
   odometry();
   leftEncoder.write(0); //Resets the accumulators to 0
   rightEncoder.write(0);
-  
+  /*
   Serial.print(pwmOutRight);
   Serial.print("  ");
   Serial.print(speedWheelRight);
@@ -189,9 +190,11 @@ void loop(void)
   Serial.print(pwmOutLeft);
   Serial.print("  ");
   Serial.println(speedWheelLeft);
-    
-//  pixyRead();
+    */
 
+
+//  pixyRead();
+ 
   delay(10); //Needed because otherwise our loop function goes too fast
 
   
@@ -239,6 +242,26 @@ void loop(void)
       case 'x':
         stop();
         break;
+      case '+': 
+        leftPID.SetTunings(leftPID.GetKp()+0.5, leftPID.GetKi(),leftPID.GetKd()); 
+        Serial.print("leftPID P value is now : "); 
+        Serial.println(leftPID.GetKp()); 
+        break;      
+      case '-': 
+        leftPID.SetTunings(leftPID.GetKp()-0.5, leftPID.GetKi(),leftPID.GetKd()); 
+        Serial.print("leftPID P value is now : "); 
+        Serial.println(leftPID.GetKp()); 
+        break; 
+      case '6': 
+        leftPID.SetTunings(leftPID.GetKp(), leftPID.GetKi(),leftPID.GetKd()+0.001); 
+        Serial.print("leftPID D value is now : "); 
+        Serial.println(leftPID.GetKd()); 
+        break; 
+      case '9': 
+        leftPID.SetTunings(leftPID.GetKp(), leftPID.GetKi(),leftPID.GetKd()-0.001); 
+        Serial.print("leftPID D value is now : "); 
+        Serial.println(leftPID.GetKd());  
+        break; 
       }
     }
     else stop();
@@ -264,16 +287,35 @@ void loop(void)
 
 
 //--------------------------------------ODOMETRY
-
+double totalDistance = 0;
 void odometry(){
-  distanceLeft = speedWheelLeft * diffTime; //Distance travelled by the left wheel
-  distanceRight = speedWheelRight * diffTime;
+  if(digitalRead(M1) == HIGH){
+    distanceLeft = factorPulseToDistance*durationLeft; //Distance travelled by the left wheel   
+        totalDistance +=distanceLeft;
+
+  }
+  else{
+    distanceLeft = -factorPulseToDistance*durationLeft; //Distance travelled by the left wheel   
+  }
+  if(digitalRead(M2) == LOW){
+    distanceRight = factorPulseToDistance*durationRight; //Distance travelled by the right wheel   
+  }
+  else{
+    distanceRight = -factorPulseToDistance*durationRight; //Distance travelled by the right wheel   
+  } 
+
   distanceCenter = (distanceLeft + distanceRight)/2;    
   phi = (distanceRight - distanceLeft)/sizeBetweenWheels;
   x = x + distanceCenter*cos(angle);
   y = y + distanceCenter*sin(angle);
   angle = angle + phi; //New angle for our robot, to calibrate with the compass
-  
+  /*
+  Serial.print("This is x position :");
+  Serial.print(x);
+  Serial.print(" and this y position :");
+  Serial.print(y);
+  Serial.print(" and this this the angle delta : ");
+  Serial.println(angle);*/
 }
 /*
 //--------------------------------------PIXYREAD
@@ -315,18 +357,19 @@ void arm(){
   stop();
    Serial.println("Arm Turning...");
    for (int position = uplim; position < lowlim; position++) {  
-     servoArm.write(position);
+     servoArm.writeMicroseconds(position);
      delay(downspeed);
    }          
    delay(waitingOnBottleTime);
    for (int position = lowlim; position > intermediatePosition; position--) {
-     servoArm.write(position);
+     servoArm.writeMicroseconds(position);
      delay(upspeedFirstPart);
    }
-   for (int position = intermediatePosition; position > uplim; position--) {
-     servoArm.write(position);
+   for (int position = intermediatePosition; position > uplim; position-=2) {
+     servoArm.writeMicroseconds(position);
      delay(upspeedSecondPart);
    }
+
    Serial.println("-DONE TURNING-");
 }
 
@@ -337,23 +380,18 @@ void back(){
    Serial.println("Back opening...");
    for (int position = uplim_b; position > lowlim_b; position--) {  
      servoBack.write(position);
+        Serial.println(servoBack.read());
+
      delay(speedBack);
    }          
    delay(waitingBottleOut);
    for (int position = lowlim_b; position < uplim_b; position++) {
      servoBack.write(position);
+        Serial.println(servoBack.read());
+
      delay(speedBack);
    }   
    Serial.println("-DONE OPENING/CLOSING-");   
-}
-
-//--------------------------------------ARMINIT
-
-void armInit(){
-  for (int positionA = positionOfArm; positionA >= uplim; positionA--) {
-        servoArm.write(positionA);
-        delay(setspeed);
-  } 
 }
 
 //--------------------------------------STOP
