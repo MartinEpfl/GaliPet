@@ -2,6 +2,7 @@ typedef struct {
     double x;
     double y;
     boolean canGoThere = true;
+    int howFar = 0;
 } position_;    
 
 const int sizeBadArea = 300; //3 meters for each arena we don't want to go in
@@ -16,19 +17,25 @@ bool destinationAvailable=false;
 boolean travellingToADestination = false;
 int indexPosibility;
 int count= 0;
-const int maxIteration = 500;
+const int maxIteration = 50;
 bool goingBack = false;
 bool wasGoingBack = false;
 bool goingHome = false;
 double ratioBeforeGoingHome = 0.8 ;
-
+int totalFar = 0;
 double valueX[maxIteration];
 double valueY[maxIteration];
+
+
+double speedWheelRight = 3; //cm/s
+double speedWheelLeft = 3;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  randomSeed(45);
+  randomSeed(4);
 }
+
+
 
 bool checkIfCanGo(position_ destination){
   if(destination.x<(sizeBadArea+epsilon)  && destination.y>(sizeOfFullArena-sizeBadArea-epsilon)){ //Rock area
@@ -44,14 +51,46 @@ bool checkIfCanGo(position_ destination){
     return false;
   }
   return true; //Otherwise it is OK
+  }
+
+  
+int returnPossibilitiesFromPosition(double x, double y, double angleToAdd){
+  int toReturn = 0;
+  position_ arrayPossibilities[3];
+  for(int i=0;i<3;i++){
+    arrayPossibilities[i].x = x + r*cos(angles[i]+currentAngle+angleToAdd);
+    arrayPossibilities[i].y = y + r*sin(angles[i]+currentAngle+angleToAdd); 
+    arrayPossibilities[i].canGoThere = checkIfCanGo(arrayPossibilities[i]);
+    if(arrayPossibilities[i].canGoThere){
+      toReturn++;
+    }
+
+  }
+  return toReturn;
+}
+
+int fromProbaToIndex(int first, int second, int third, int randomNumber){/*
+  Serial.print("Second plus first : ");
+  Serial.print(second+first);
+  Serial.print(" ; random number :");
+  Serial.println(randomNumber);*/
+  if(randomNumber<first)return 0;
+  if(first<=randomNumber && randomNumber<(second+first))return 1;
+  if((second+first)<=randomNumber && randomNumber<(third+second+first)) return 2;
 }
 
 void loop() {
-
   if(count<maxIteration){
     goingHome = count>maxIteration*ratioBeforeGoingHome;
     if(!travellingToADestination){
       destinationAvailable=false;
+      totalFar = 0;/*
+      Serial.print("Position du robot : (");
+      Serial.print(positionOfRobot.x);
+      Serial.print(";");
+      Serial.print(positionOfRobot.y);
+      Serial.println(")");*/
+       
       for(int i=0;i<3;i++){
         possibilities[i].x = positionOfRobot.x + r*cos(angles[i]+currentAngle);
         possibilities[i].y = positionOfRobot.y + r*sin(angles[i]+currentAngle); /*
@@ -59,6 +98,14 @@ void loop() {
         Serial.print( " , ");
         Serial.println(possibilities[i].y);*/
         possibilities[i].canGoThere = checkIfCanGo(possibilities[i]);
+        possibilities[i].howFar = returnPossibilitiesFromPosition( possibilities[i].x,possibilities[i].y ,angles[i] );
+        totalFar+=possibilities[i].howFar;/*
+        Serial.print("Nombre de possibilité pour la position ");
+        Serial.print(i);
+        Serial.print(" : ");
+        Serial.println(possibilities[i].howFar);*/
+
+
         if(possibilities[i].canGoThere && (!wasGoingBack || i!=1)){
           destinationAvailable=true;
           wasGoingBack = false;
@@ -66,11 +113,19 @@ void loop() {
       }
       if(destinationAvailable){
         travellingToADestination = true;
+        Serial.print("Proba d'aller a gauche:");
+        Serial.print(possibilities[0].howFar/(double)totalFar);
+        Serial.print("Proba d'aller au centre:");
+        Serial.print(possibilities[1].howFar/(double)totalFar);
+        Serial.print("Proba d'aller a droite:");
+        Serial.println(possibilities[2].howFar/(double)totalFar);
         if(!goingHome){
           do{
-            indexPosibility = random(0,3);
-  
+            int random_ = random(0,totalFar);
+            indexPosibility = fromProbaToIndex(possibilities[0].howFar,possibilities[1].howFar,possibilities[2].howFar,random_);
           }while(!possibilities[indexPosibility].canGoThere);
+
+                    
         }
         else{
           int indexToHome = 0;
