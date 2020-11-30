@@ -16,7 +16,7 @@ bool destinationAvailable=false;
 boolean travellingToADestination = false;
 int indexPosibility;
 int count= 0;
-const int maxIteration = 100;
+const int maxIteration = 500;
 bool goingBack = false;
 bool wasGoingBack = false;
 bool goingHome = false;
@@ -61,17 +61,16 @@ void loop() {
         possibilities[i].canGoThere = checkIfCanGo(possibilities[i]);
         if(possibilities[i].canGoThere && (!wasGoingBack || i!=1)){
           destinationAvailable=true;
+          wasGoingBack = false;
         }
       }
       if(destinationAvailable){
-                  travellingToADestination = true;
-
+        travellingToADestination = true;
         if(!goingHome){
           do{
             indexPosibility = random(0,3);
   
           }while(!possibilities[indexPosibility].canGoThere);
-          wasGoingBack = false;
         }
         else{
           int indexToHome = 0;
@@ -79,7 +78,7 @@ void loop() {
           int distanceI;
           for(int i= 0; i<3;i++){
             distanceI = sqrt(possibilities[i].x * possibilities[i].x + possibilities[i].y*possibilities[i].y);
-            if(distanceI<distanceMin){
+            if(distanceI<distanceMin && possibilities[i].canGoThere){
               indexToHome = i;
               distanceMin = distanceI;
             }
@@ -95,8 +94,8 @@ void loop() {
     }
     if(travellingToADestination){
       if(goingBack){
-        positionOfRobot.x += 10*cos(currentAngle + PI);
-        positionOfRobot.y += 10*sin(currentAngle + PI);
+        positionOfRobot.x += r*cos(currentAngle + PI);
+        positionOfRobot.y += r*sin(currentAngle + PI);
       }
       else{
        positionOfRobot.x =   possibilities[indexPosibility].x;
