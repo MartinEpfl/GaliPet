@@ -18,11 +18,11 @@ bool destinationAvailable=false;
 boolean travellingToADestination = false;
 int indexPosibility;
 int count= 0;
-const int maxIteration = 200;
+const int maxIteration = 100;
 bool goingBack = false;
 bool wasGoingBack = false;
 bool goingHome = false;
-double ratioBeforeGoingHome = 0.4 ;
+double ratioBeforeGoingHome = 0.85 ;
 int totalFar = 0;
 double valueX[4*maxIteration];
 double valueY[4*maxIteration];
@@ -43,7 +43,7 @@ const int optimalSpeedUpper = (r+sizeBetweenWheels/2)*(PI/4)/4;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  randomSeed(23);
+  randomSeed(41);
 
 }
 
@@ -166,13 +166,15 @@ void loop() {
           int distanceI;
           for(int i= 0; i<3;i++){
             distanceI = sqrt(possibilities[i].x * possibilities[i].x + possibilities[i].y*possibilities[i].y);
+          /*  Serial.print("Value of distance I : ");
+            Serial.println(distanceI);*/
             if(distanceI<distanceMin && possibilities[i].canGoThere){
               indexToHome = i;
               distanceMin = distanceI;
             }
           }
+
           indexPosibility = indexToHome;
-          Serial.println(indexPosibility);
         }
       }
       else{
@@ -221,8 +223,8 @@ void loop() {
             speedWheelLeft = optimalSpeedUpper;          
           }
          if(time_==0 || time_==10 ||time_==20 || time_==30){
-          
-          valueX[4*count+time_/10] = positionOfRobot.x;
+     
+      valueX[4*count+time_/10] = positionOfRobot.x;
           valueY[4*count+time_/10] = positionOfRobot.y;
          }
          time_++;
@@ -248,18 +250,26 @@ void loop() {
    if(count==maxIteration ){
     Serial.println("DONE!");
     Serial.print("x = [");
-    for(int i=maxIteration*ratioBeforeGoingHome;i<(maxIteration-1);i++){
+    for(int i=0;i<4*(maxIteration-1);i++){
       Serial.print(valueX[i]);
       Serial.print(",");
     }
-    Serial.print(valueX[maxIteration-1]);
+    Serial.print(valueX[4*maxIteration-3]);
+    Serial.print(",");
+    Serial.print(valueX[4*maxIteration-2]);
+    Serial.print(",");
+    Serial.print(valueX[4*maxIteration-1]);  
     Serial.println("]");
     Serial.print("y = [");
-    for(int i=maxIteration*ratioBeforeGoingHome;i<(maxIteration-1);i++){
+    for(int i=0;i<4*(maxIteration-1);i++){
       Serial.print(valueY[i]);
       Serial.print(",");
     }
-    Serial.print(valueY[maxIteration-1]);
+    Serial.print(valueY[4*maxIteration-3]);
+    Serial.print(",");
+    Serial.print(valueY[4*maxIteration-2]);
+    Serial.print(",");
+    Serial.print(valueY[4*maxIteration-1]);
     Serial.println("]");
     count++; 
   }
