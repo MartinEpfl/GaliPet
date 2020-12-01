@@ -83,22 +83,22 @@ void loop() {
   distanceR = sensorR.distance();
   distanceT = sensorT.distance();
 
-if sensorT.distance()>cutOffDistance { //No obstacle detected --> T=0
-  if sensorM.distance()>cutOffDistance { //Nothing on middle sensor --> T=0 M=0
-    if sensorL.distance()>cutOffDistance { // Noting on left sensor --> T=0 M=0 L=0
-      if sensorR.distance()<cutOffDistance { // Right sensor detects --> T=0 M=0 L=0 R=1
+if (sensorT.distance()>cutOffDistance) { //No obstacle detected --> T=0
+  if (sensorM.distance()>cutOffDistance) { //Nothing on middle sensor --> T=0 M=0
+    if (sensorL.distance()>cutOffDistance) { // Noting on left sensor --> T=0 M=0 L=0
+      if (sensorR.distance()<cutOffDistance) { // Right sensor detects --> T=0 M=0 L=0 R=1
         Serial.println("Turn right until M=1");
       }
     }
     else { // Left sensor detects --> T=0 M=0 L=1
-      if sensorR.distance()>cutOffDistance { // Nothing on right sensor --> T=0 M=0 L=1 R=0
+      if (sensorR.distance()>cutOffDistance) { // Nothing on right sensor --> T=0 M=0 L=1 R=0
         Serial.println("Turn right until M=1");
       }
     }
   }
   else { //Middle sensor detects --> T=0 M=1
-    if sensorL.distance()<cutOffDistance { // Left sensor detects --> T=0 M=1 L=1
-      if sensorR.distance()<cutOffDistance { // Right sensor detects --> T=0 M=1 L=1 R=1
+    if (sensorL.distance()<cutOffDistance) { // Left sensor detects --> T=0 M=1 L=1
+      if (sensorR.distance()<cutOffDistance) { // Right sensor detects --> T=0 M=1 L=1 R=1
         Serial.println("Catch bottle");
       }
       else { // Nothing on right detector --> T=0 M=1 L=1 R=0
@@ -106,7 +106,7 @@ if sensorT.distance()>cutOffDistance { //No obstacle detected --> T=0
       }
     }
     else { // Nothing on left sensor --> T=0 M=1 L=0
-      if sensorR.distance()<cutOffDistance { // Right sensor detects --> T=0 M=1 L=0 R=1
+      if (sensorR.distance()<cutOffDistance) { // Right sensor detects --> T=0 M=1 L=0 R=1
         Serial.println("Turn left and forward");
       }
       else { // Nothing on Right sensor --> T=0 M=1 L=0 R=0
