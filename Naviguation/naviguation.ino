@@ -43,7 +43,7 @@ const int optimalSpeedUpper = (r+sizeBetweenWheels/2)*(PI/4)/4;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  randomSeed(41);
+  randomSeed(4);
 
 }
 
@@ -131,7 +131,10 @@ void loop() {
         Serial.println(possibilities[i].y);*/
         possibilities[i].canGoThere = checkIfCanGo(possibilities[i]);
         possibilities[i].howFar = returnPossibilitiesFromPosition( possibilities[i].x,possibilities[i].y ,angles[i] );
-        totalFar+=possibilities[i].howFar;/*
+        totalFar+=possibilities[i].howFar;
+        /*
+        S
+        
         Serial.print("Nombre de possibilité pour la position ");
         Serial.print(i);
         Serial.print(" : ");
@@ -143,6 +146,7 @@ void loop() {
           wasGoingBack = false;
         }
       }
+      if(totalFar==0)destinationAvailable=false;
       if(destinationAvailable){
         travellingToADestination = true;/*
         Serial.print("Proba d'aller a gauche:");
@@ -153,9 +157,9 @@ void loop() {
         Serial.println(possibilities[2].howFar/(double)totalFar);*/
         if(!goingHome){
           do{
-         //   int random_ = random(0,totalFar);
-           // indexPosibility = fromProbaToIndex(possibilities[0].howFar,possibilities[1].howFar,possibilities[2].howFar,random_);
-            indexPosibility = random(0,3);
+            int random_ = random(0,totalFar);
+            indexPosibility = fromProbaToIndex(possibilities[0].howFar,possibilities[1].howFar,possibilities[2].howFar,random_);
+           // indexPosibility = random(0,3);
           }while(!possibilities[indexPosibility].canGoThere);
 
                     
