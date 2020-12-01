@@ -7,8 +7,9 @@ typedef struct {
 
 const int sizeBadArea = 300; //3 meters for each arena we don't want to go in
 const int sizeOfFullArena = 800;
-const double epsilon = 10; //How close you dont want to get close to the area you don't want to go in
-const double r = 20; //Radius of circle
+const double epsilon = 20; //How close you dont want to get close to the area you don't want to go in
+const double r = 40; //Radius of circle
+
 position_ possibilities[3];
 const double angles[3] = {PI/4, 0,-PI/4,};
 position_ positionOfRobot;
@@ -17,25 +18,50 @@ bool destinationAvailable=false;
 boolean travellingToADestination = false;
 int indexPosibility;
 int count= 0;
-const int maxIteration = 50;
+const int maxIteration = 200;
 bool goingBack = false;
 bool wasGoingBack = false;
 bool goingHome = false;
-double ratioBeforeGoingHome = 0.8 ;
+double ratioBeforeGoingHome = 0.4 ;
 int totalFar = 0;
-double valueX[maxIteration];
-double valueY[maxIteration];
+double valueX[4*maxIteration];
+double valueY[4*maxIteration];
+int time_ = 0;
+//Odometry 69*PI/16; 31*PI/16;
+double speedWheelRight = 0; //cm/s
+double speedWheelLeft = 0;
+double sizeBetweenWheels = 38; //cm
+double timeBetweenRead = 1;
+double distanceLeft = speedWheelLeft * timeBetweenRead/100;
+double distanceRight = speedWheelRight * timeBetweenRead/100;
+double distanceCenter = (distanceLeft + distanceRight)/2;
+double phi = 0;
 
+const int optimalSpeedLower = (r-sizeBetweenWheels/2)*(PI/4)/4;
+const int optimalSpeedUpper = (r+sizeBetweenWheels/2)*(PI/4)/4;
 
-double speedWheelRight = 3; //cm/s
-double speedWheelLeft = 3;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  randomSeed(4);
+  randomSeed(23);
+
 }
 
+void odometry(){
+  distanceLeft = speedWheelLeft *  timeBetweenRead/10; //Distance from the left wheel since last check
+  distanceRight = speedWheelRight *  timeBetweenRead/10; //for the right wheel
+  distanceCenter = (distanceLeft + distanceRight)/2; //For the center of the two wheels
 
+  phi = (distanceRight - distanceLeft)/sizeBetweenWheels;
+  positionOfRobot.x = positionOfRobot.x + distanceCenter*cos(currentAngle);
+  positionOfRobot.y = positionOfRobot.y + distanceCenter*sin(currentAngle);
+  /*
+  Serial.print(positionOfRobot.x);
+  Serial.print(" ; ");
+  Serial.println(positionOfRobot.y);*/
+
+  currentAngle = currentAngle + phi; //New angle for our robot, to calibrate with the compass
+}
 
 bool checkIfCanGo(position_ destination){
   if(destination.x<(sizeBadArea+epsilon)  && destination.y>(sizeOfFullArena-sizeBadArea-epsilon)){ //Rock area
@@ -82,6 +108,12 @@ int fromProbaToIndex(int first, int second, int third, int randomNumber){/*
 void loop() {
   if(count<maxIteration){
     goingHome = count>maxIteration*ratioBeforeGoingHome;
+//    Serial.print("Diff on X : ");
+   // Serial.print(possibilities[indexPosibility].x - positionOfRobot.x);
+  //  Serial.print("Diff on Y : ");
+//  Serial.print(" ");
+  //  Serial.println(possibilities[indexPosibility].y - positionOfRobot.y);
+    odometry();
     if(!travellingToADestination){
       destinationAvailable=false;
       totalFar = 0;/*
@@ -112,17 +144,18 @@ void loop() {
         }
       }
       if(destinationAvailable){
-        travellingToADestination = true;
+        travellingToADestination = true;/*
         Serial.print("Proba d'aller a gauche:");
         Serial.print(possibilities[0].howFar/(double)totalFar);
         Serial.print("Proba d'aller au centre:");
         Serial.print(possibilities[1].howFar/(double)totalFar);
         Serial.print("Proba d'aller a droite:");
-        Serial.println(possibilities[2].howFar/(double)totalFar);
+        Serial.println(possibilities[2].howFar/(double)totalFar);*/
         if(!goingHome){
           do{
-            int random_ = random(0,totalFar);
-            indexPosibility = fromProbaToIndex(possibilities[0].howFar,possibilities[1].howFar,possibilities[2].howFar,random_);
+         //   int random_ = random(0,totalFar);
+           // indexPosibility = fromProbaToIndex(possibilities[0].howFar,possibilities[1].howFar,possibilities[2].howFar,random_);
+            indexPosibility = random(0,3);
           }while(!possibilities[indexPosibility].canGoThere);
 
                     
@@ -139,6 +172,7 @@ void loop() {
             }
           }
           indexPosibility = indexToHome;
+          Serial.println(indexPosibility);
         }
       }
       else{
@@ -149,21 +183,64 @@ void loop() {
     }
     if(travellingToADestination){
       if(goingBack){
-        positionOfRobot.x += r*cos(currentAngle + PI);
-        positionOfRobot.y += r*sin(currentAngle + PI);
-      }
+        if(time_<40){
+           speedWheelRight = -50/4;
+           speedWheelLeft = -50/4;
+           if(time_==0 || time_==10||time_==20 || time_==30){
+            valueX[4*count+time_/10] = positionOfRobot.x;
+            valueY[4*count+time_/10] = positionOfRobot.y;
+          }
+           time_++;
+
+        }
+        else{
+          travellingToADestination = false;  
+          time_ = 0;
+          count++; 
+          goingBack = false; 
+
+        }
+      
+    //    positionOfRobot.x += r*cos(currentAngle + PI);
+     //   positionOfRobot.y += r*sin(currentAngle + PI);
+     }
+
       else{
-       positionOfRobot.x =   possibilities[indexPosibility].x;
-       positionOfRobot.y =   possibilities[indexPosibility].y;
-       currentAngle += angles[indexPosibility];      
+        goingBack = false;
+        if(time_<40){
+          if(indexPosibility==0){
+            speedWheelRight = optimalSpeedUpper;
+            speedWheelLeft = optimalSpeedLower;
+          }
+          if(indexPosibility==1){
+            speedWheelRight = r/4;
+            speedWheelLeft = r/4;            
+          }
+          if(indexPosibility==2){
+            speedWheelRight = optimalSpeedLower;
+            speedWheelLeft = optimalSpeedUpper;          
+          }
+         if(time_==0 || time_==10 ||time_==20 || time_==30){
+          
+          valueX[4*count+time_/10] = positionOfRobot.x;
+          valueY[4*count+time_/10] = positionOfRobot.y;
+         }
+         time_++;
+
+        }
+        else{
+          time_ =0;
+          travellingToADestination = false;
+          count++;  
+
+        }
+     //  positionOfRobot.x =   possibilities[indexPosibility].x;
+      // positionOfRobot.y =   possibilities[indexPosibility].y;
+      // currentAngle += angles[indexPosibility];      
       }
      //HERE MUST CHANGE
 
-     valueX[count] = positionOfRobot.x;
-     valueY[count] = positionOfRobot.y;
-     travellingToADestination = false;
-     goingBack = false;
-     count++;  
+
     }
    // delay(100);  
 
@@ -171,14 +248,14 @@ void loop() {
    if(count==maxIteration ){
     Serial.println("DONE!");
     Serial.print("x = [");
-    for(int i=0;i<(maxIteration-1);i++){
+    for(int i=maxIteration*ratioBeforeGoingHome;i<(maxIteration-1);i++){
       Serial.print(valueX[i]);
       Serial.print(",");
     }
     Serial.print(valueX[maxIteration-1]);
     Serial.println("]");
     Serial.print("y = [");
-    for(int i=0;i<(maxIteration-1);i++){
+    for(int i=maxIteration*ratioBeforeGoingHome;i<(maxIteration-1);i++){
       Serial.print(valueY[i]);
       Serial.print(",");
     }
