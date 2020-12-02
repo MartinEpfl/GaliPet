@@ -34,9 +34,9 @@ int intermediatePosition = 1000;
 Servo servoBack;
 int pinServoBack = 9; //Pin of servo for the back (PWM)
 int positionOfBack;
-int uplim_b = 70; //Position of back when close
+int uplim_b = 110; //Position of back when close
 int lowlim_b = 0; //Position of back when open
-int speedBack = 50; //Speed back is opening/closing
+int speedBack = 25; //Speed back is opening/closing
 int waitingBottleOut = 3000; //Waiting for bottle to go out
 
 //Motors, M1 is left wheel, M2 is right wheel
@@ -138,7 +138,7 @@ void setup(void)
   Serial.println("DONE");
   positionOfBack = servoBack.read(); 
   Serial.println("Reseting the back...");
-  servoBack.write(70);
+  servoBack.write(uplim_b);
   Serial.println("DONE");
 
   
@@ -168,7 +168,6 @@ void setup(void)
 
 void loop(void)
 {
-  Serial.println(speedWheelLeft - speedWheelRight);
 
   
   previousTime = currentTime;
@@ -191,7 +190,6 @@ void loop(void)
   Serial.print("  ");
   Serial.println(speedWheelLeft);
     */
-
 
 //  pixyRead();
  
