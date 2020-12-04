@@ -19,6 +19,9 @@ const int sizeArenaHeight = 500; //IF SMALL ARENA
 const double epsilon = 0; //How close you dont want to get close to the area you don't want to go in
 const double r = 50; //Radius of circle
 
+position_ leftRight[2];
+
+
 position_ possibilities[3]; //Posibilities of where to go
 const double angles[3] = {PI/4, 0,-PI/4,};
 position_ positionOfRobot; //Our robot
@@ -51,10 +54,16 @@ const int optimalSpeedLower = (r-sizeBetweenWheels/2)*(PI/4);
 const int optimalSpeedUpper = (r+sizeBetweenWheels/2)*(PI/4);
 const int optimalSpeedForward = r;
 const int optimalSpeedBackward = optimalSpeedForward;
+const int optimalSpeedTurn = sizeBetweenWheels * (PI/2);
 /////////////////////////////////////////////////////
 byte incomingByte; //Byte being read from user
 //All the speeds are in ms/angle (it is not a speed I know it's the inverse of a speed
 
+////////////////Compass//////////
+int angleCompass = 0;
+
+
+///////Servo of the Arm////////////
 
 Servo servoArm;
 int pinservoArm =  8; //Pin of servo for the ARM (PWM)
@@ -126,6 +135,7 @@ PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight,5.1,0.5,0.005, DI
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(19200);      //Set Baud Rate    
+  Serial2.begin(9600); //Compass has a Baud Rate of 9600
   randomSeed(3543);
 
   pinMode(E1, OUTPUT);
@@ -160,7 +170,8 @@ void setup() {
 
 void loop() {
   if(count<maxIteration){
-    Serial.println(optimalSpeedUpper);
+    readValueCompass();
+    Serial.println(angleCompass);
    // Serial.println("--------------");
  //   Serial.println(pwmOutLeft);
   //  Serial.println(targetSpeedLeft);
@@ -318,6 +329,13 @@ void loop() {
          //   speedWheelRight = optimalSpeedLower;
          //   speedWheelLeft = optimalSpeedUpper;          
           }
+         if(indexPosibility==3){
+           turn_L(0, optimalSpeedTurn);
+         }
+         if(indexPosibility==4){
+          turn_R(optimalSpeedTurn, 0);
+          
+         }
          if(time_==0 || time_==10 ||time_==20 || time_==30){
      
       valueX[4*count+time_/10] = positionOfRobot.x;
@@ -375,7 +393,51 @@ void loop() {
 
 }
 
+void readValueCompass(){
+  char valeurByte[8];
+  int stack =0;
+  boolean readByte = false;
+  boolean value = false;;
+  Serial2.write(0x31); //Asking for the angle, for each command sent you get 8 byte as an answer
+  //First byte, enter => New Line => hundreds of angle => tens of angle => bits of angle => Decimal point of angle => Decimal of angle => Calibrate sum
+  while (!value) {
+    if (Serial2.available()) {
+      valeurByte[stack] = Serial2.read(); //Read the value & stacks it
+      stack = (stack + 1) % 8; //Allows to read the full 8 bytes
+      if (stack == 0) {
+        angleCompass = (valeurByte[2] - 48) * 100 + (valeurByte[3] - 48) * 10 + (valeurByte[4] - 48); //Computes the angle by reading bytes 
+        value = true;
+      }
+    }
+  }
+}
 
+void dodgingObstacle(double distanceToObstacle){
+  const int thresholdDistance = 25;
+  if(distanceToObstacle>thresholdDistance){
+    leftRight[0].x = positionOfRobot.x + (sizeBetweenWheels/2)*cos(currentAngle+PI/2); 
+    leftRight[0].y = positionOfRobot.y + (sizeBetweenWheels/2)*sin(currentAngle+PI/2); 
+    leftRight[0].canGoThere = checkIfCanGo(leftRight[0]);
+    leftRight[1].x = positionOfRobot.x + (sizeBetweenWheels/2)*cos(currentAngle+PI/2); 
+    leftRight[1].y = positionOfRobot.y + (sizeBetweenWheels/2)*sin(currentAngle+PI/2); 
+    leftRight[1].canGoThere = checkIfCanGo(leftRight[1]);
+    if(leftRight[0].canGoThere && leftRight[1].canGoThere ){
+      indexPosibility = random(3,5);
+    }
+    else if(leftRight[0].canGoThere){
+      indexPosibility = 3;
+    }
+    else{
+      indexPosibility = 4;
+    }
+    travellingToADestination = true;
+  }
+  else{
+    travellingToADestination = true;
+    goingBack = true;
+    wasGoingBack = true;
+  }
+}
 
 
 void odometry(){
