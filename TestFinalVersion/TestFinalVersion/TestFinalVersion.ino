@@ -14,9 +14,9 @@ typedef struct {
 const int sizeBadArea = 300; //3 meters for each arena we don't want to go in
 //const int sizeOfFullArena = 800; //IF FULL ARENA
 
-const int sizeArenaWidth = 300; //IF SMALL ARENA
-const int sizeArenaHeight = 500; //IF SMALL ARENA
-const double epsilon = 0; //How close you dont want to get close to the area you don't want to go in
+const int sizeArenaWidth = 200; //IF SMALL ARENA
+const int sizeArenaHeight = 800; //IF SMALL ARENA
+const double epsilon = 40; //How close you dont want to get close to the area you don't want to go in
 const double r = 50; //Radius of circle
 
 position_ leftRight[2];
@@ -25,6 +25,7 @@ position_ leftRight[2];
 position_ possibilities[3]; //Posibilities of where to go
 const double angles[3] = {PI/4, 0,-PI/4,};
 position_ positionOfRobot; //Our robot
+
 bool destinationAvailable=false; //If there is somewhere to go
 boolean travellingToADestination = false; //If it is going somewhere
 int indexPosibility;
@@ -138,13 +139,15 @@ void setup() {
   Serial.begin(19200);      //Set Baud Rate    
   Serial2.begin(9600); //Compass has a Baud Rate of 9600
   randomSeed(3543);
-  readValueCompass();
+
+  //readValueCompass();
   initialDifference = angleCompass  - currentAngle;
   pinMode(E1, OUTPUT);
   pinMode(M1, OUTPUT);
   pinMode(E2, OUTPUT);
   pinMode(M2, OUTPUT);
-
+  positionOfRobot.x = 50;
+  positionOfRobot.y = 50;
   //setting up servos
   servoArm.attach(pinservoArm);
   servoBack.attach(pinServoBack);
@@ -155,7 +158,6 @@ void setup() {
   positionOfBack = servoBack.read(); 
   Serial.println("Reseting the back...");
   servoBack.write(70);
-  Serial.println("DONE");
 
   
   // PIDs on
@@ -172,7 +174,7 @@ void setup() {
 
 void loop() {
   if(count<maxIteration){
-    readValueCompass();
+    //readValueCompass();
     Serial.println(angleCompass);
    // Serial.println("--------------");
  //   Serial.println(pwmOutLeft);
@@ -497,7 +499,7 @@ bool checkIfCanGo(position_ destination){
   }*/
 //MADE FOR SMALLER ARENA
 bool checkIfCanGo(position_ destination){
-  if(destination.x<epsilon || destination.x>sizeArenaWidth-epsilon || destination.y<epsilon || destination.y>sizeArenaHeight-epsilon){ //Don't get out of the arena
+  if(destination.x<epsilon || destination.x>(sizeArenaWidth-epsilon) || destination.y<epsilon || destination.y>(sizeArenaHeight-epsilon)){ //Don't get out of the arena
     return false;
   }
   return true; //Otherwise it is OK
