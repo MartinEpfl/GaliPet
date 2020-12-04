@@ -49,7 +49,7 @@ int distanceT;
 
                         //Tuning parameters
 
-int cutOffDistance;
+int cutOffDistance = 220;
 
 /* Model :
   GP2Y0A02YK0F --> 20150
@@ -69,6 +69,17 @@ int count = 0;
 int average = 0;
 
 int numberDetected[numberOfInputs];
+
+
+#define WINDOW_SIZE 50
+unsigned long INDEX = 0;
+int VALUE = 0;
+int SUM = 0;
+int READINGS[WINDOW_SIZE];
+int AVERAGED = 0;
+
+
+
 void setup() {
                         // Begin serial communication at a baud rate of 9600:
   Serial.begin(9600);
@@ -83,11 +94,33 @@ void loop() {
   distanceR = sensorR.distance();
   distanceT = sensorT.distance();
 
+SUM = SUM - READINGS[INDEX];       // Remove the oldest entry from the sum
+  VALUE = distanceM;        // Read the next sensor value
+  READINGS[INDEX] = VALUE;           // Add the newest reading to the window
+  SUM = SUM + VALUE;                 // Add the newest reading to the sum
+  INDEX = (INDEX+1) % WINDOW_SIZE;   // Increment the index, and wrap to 0 if it exceeds the window size
+
+  AVERAGED = SUM / WINDOW_SIZE;      // Divide the sum of the window by the window size for the result
+
+
+Serial.print(distanceL);
+Serial.print(" ");
+Serial.print(AVERAGED);
+Serial.print(" ");
+Serial.print(distanceR);
+Serial.print(" ");
+Serial.println(distanceT);
+
+
+/*
 if (sensorT.distance()>cutOffDistance) { //No obstacle detected --> T=0
   if (sensorM.distance()>cutOffDistance) { //Nothing on middle sensor --> T=0 M=0
     if (sensorL.distance()>cutOffDistance) { // Noting on left sensor --> T=0 M=0 L=0
       if (sensorR.distance()<cutOffDistance) { // Right sensor detects --> T=0 M=0 L=0 R=1
-        Serial.println("Turn right until M=1");
+        Serial.println("Turn left until M=1");
+      }
+      else {
+        Serial.println("Nothing detected"); // Nothing detected --> T=0 M=0 L=0 R=0
       }
     }
     else { // Left sensor detects --> T=0 M=0 L=1
@@ -118,7 +151,7 @@ if (sensorT.distance()>cutOffDistance) { //No obstacle detected --> T=0
 else { // Top sensor detects --> T=1
   Serial.println("Obstacle detected");
 }
+*/
 
-
-  delay(100);
+ // delay(100);
   }

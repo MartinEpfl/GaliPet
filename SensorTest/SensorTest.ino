@@ -65,6 +65,14 @@ int count = 0;
 int average = 0;
 
 int numberDetected[numberOfInputs];
+
+#define WINDOW_SIZE 5
+unsigned long INDEX = 0;
+int VALUE = 0;
+int SUM = 0;
+int READINGS[WINDOW_SIZE];
+int AVERAGED = 0;
+
 void setup() {
                         // Begin serial communication at a baud rate of 9600:
   Serial.begin(9600);
@@ -78,12 +86,23 @@ void loop() {
   distanceNE = sensorNE.distance();
   distanceSW = sensorSW.distance();
   distanceSE = sensorSE.distance();
-  //Serial.print(distanceNW);
-  Serial.print(" ");
+
+SUM = SUM - READINGS[INDEX];       // Remove the oldest entry from the sum
+  VALUE = distanceNW;        // Read the next sensor value
+  READINGS[INDEX] = VALUE;           // Add the newest reading to the window
+  SUM = SUM + VALUE;                 // Add the newest reading to the sum
+  INDEX = (INDEX+1) % WINDOW_SIZE;   // Increment the index, and wrap to 0 if it exceeds the window size
+
+  AVERAGED = SUM / WINDOW_SIZE;      // Divide the sum of the window by the window size for the result
+
+  
+  
+  Serial.println(AVERAGED);
+//  Serial.print(" ");
   //Serial.print(distanceNE);
-  Serial.print(" ");
+//  Serial.print(" ");
  // Serial.print(distanceSW);
-  Serial.print(" ");
+//  Serial.print(" ");
   if(distanceNW<=80 and distanceNW>=5 and count!=numberOfInputs){
     numberDetected[count] = distanceNW;
     /*Serial.println("This is numberDetected :");
@@ -98,7 +117,7 @@ void loop() {
       average/=numberOfInputs;
       count = 0;
   }
-  Serial.println(average);
+ // Serial.println(average);
  // Serial.println(distanceSE);
                         // Print the measured distance to the serial monitor:
   if(distanceSE<80 and distanceSE>10 and distanceSW<80 and distanceSW>10){
@@ -108,7 +127,7 @@ void loop() {
      else{ //Serial.println("Bottle found!");
      }
     }
-  delay(100);
+//  delay(2);
   }
 /*view raw_82_Sharp_Distance_Sensor_01.ino hosted with ❤ by GitHub
 */
