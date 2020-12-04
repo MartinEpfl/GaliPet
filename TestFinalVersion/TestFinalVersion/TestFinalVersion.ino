@@ -15,9 +15,9 @@ const int sizeBadArea = 300; //3 meters for each arena we don't want to go in
 //const int sizeOfFullArena = 800; //IF FULL ARENA
 
 const int sizeArenaWidth = 200; //IF SMALL ARENA
-const int sizeArenaHeight = 800; //IF SMALL ARENA
+const int sizeArenaHeight = 400; //IF SMALL ARENA
 const double epsilon = 40; //How close you dont want to get close to the area you don't want to go in
-const double r = 50; //Radius of circle
+const double r = 35; //Radius of circle
 
 position_ leftRight[2];
 
@@ -200,16 +200,16 @@ void loop() {
     leftPID.Compute();
     rightPID.Compute();
     analogWrite(E1, pwmOutLeft);
-    analogWrite(E2, pwmOutRight);
+    analogWrite(E2, pwmOutRight);/*
     Serial.print(currentAngle);
     Serial.print(" VS ");
-    Serial.println(angleCompass);
+    Serial.println(angleCompass);*/
     /*
           Serial.print("Position du robot : (");
       Serial.print(positionOfRobot.x);
       Serial.print(";");
       Serial.print(positionOfRobot.y);
-      Serial.println(")");*/
+      Serial.println(")");
     /*
     
     Serial.print("Diff on X : ");

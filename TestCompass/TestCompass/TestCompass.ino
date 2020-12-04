@@ -24,6 +24,8 @@ void compass() {
   Serial2.write(0x31); //Asking for the angle, for each command sent you get 8 byte as an answer
   //First byte, enter => New Line => hundreds of angle => tens of angle => bits of angle => Decimal point of angle => Decimal of angle => Calibrate sum
   while (!value) {
+    Serial.println("STUCK");
+    Serial2.write(0x31);
     if (Serial2.available()) {
       valeurByte[stack] = Serial2.read(); //Read the value & stacks it
       stack = (stack + 1) % 8; //Allows to read the full 8 bytes
