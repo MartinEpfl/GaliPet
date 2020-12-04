@@ -61,7 +61,7 @@ byte incomingByte; //Byte being read from user
 
 ////////////////Compass//////////
 int angleCompass = 0;
-
+boolean needToInitializeAngle = true;
 
 ///////Servo of the Arm////////////
 
@@ -137,7 +137,7 @@ void setup() {
   Serial.begin(19200);      //Set Baud Rate    
   Serial2.begin(9600); //Compass has a Baud Rate of 9600
   randomSeed(3543);
-
+  readValueCompass();
   pinMode(E1, OUTPUT);
   pinMode(M1, OUTPUT);
   pinMode(E2, OUTPUT);
@@ -397,7 +397,8 @@ void readValueCompass(){
   char valeurByte[8];
   int stack =0;
   boolean readByte = false;
-  boolean value = false;;
+  boolean value = false;
+  double ratio;
   Serial2.write(0x31); //Asking for the angle, for each command sent you get 8 byte as an answer
   //First byte, enter => New Line => hundreds of angle => tens of angle => bits of angle => Decimal point of angle => Decimal of angle => Calibrate sum
   while (!value) {
@@ -409,6 +410,9 @@ void readValueCompass(){
         value = true;
       }
     }
+  }
+  if(needToInitializeAngle){
+    
   }
 }
 

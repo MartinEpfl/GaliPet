@@ -1,3 +1,6 @@
+
+////////////////////////////// NAVIGUATION ///////////////////////////////////////////
+
 typedef struct {
     double x;
     double y;
@@ -7,29 +10,31 @@ typedef struct {
 
 const int sizeBadArea = 300; //3 meters for each arena we don't want to go in
 const int sizeOfFullArena = 800;
-const double epsilon = 20; //How close you dont want to get close to the area you don't want to go in
+const double epsilon = 25; //How close you dont want to get close to the area you don't want to go in
 const double r = 40; //Radius of circle
 
-position_ possibilities[3];
+position_ leftRight[2];
+
+position_ possibilities[3]; //Posibilities of where to go
 const double angles[3] = {PI/4, 0,-PI/4,};
-position_ positionOfRobot;
-double currentAngle = PI/4;
-bool destinationAvailable=false;
-boolean travellingToADestination = false;
+position_ positionOfRobot; //Our robot
+double currentAngle = PI/4; //Starting angle
+bool destinationAvailable=false; //If there is somewhere to go
+boolean travellingToADestination = false; //If it is going somewhere
 int indexPosibility;
 int count= 0;
 const int maxIteration = 100;
-bool goingBack = false;
-bool wasGoingBack = false;
-bool goingHome = false;
+bool goingBack = false; //If the robot is moving backward
+bool wasGoingBack = false; //If the last movement was to go backward
+bool goingHome = false; //If the robot is going homer
 double ratioBeforeGoingHome = 0.85 ;
 int totalFar = 0;
 double valueX[4*maxIteration];
 double valueY[4*maxIteration];
 int time_ = 0;
 //Odometry 69*PI/16; 31*PI/16;
-double speedWheelRight = 0; //cm/s
-double speedWheelLeft = 0;
+double speedWheelRight = 0; //cm/s Speed of left wheel
+double speedWheelLeft = 0; //Speed of right wheel
 double sizeBetweenWheels = 38; //cm
 double timeBetweenRead = 1;
 double distanceLeft = speedWheelLeft * timeBetweenRead/100;
@@ -39,11 +44,11 @@ double phi = 0;
 
 const int optimalSpeedLower = (r-sizeBetweenWheels/2)*(PI/4)/4;
 const int optimalSpeedUpper = (r+sizeBetweenWheels/2)*(PI/4)/4;
-
+const int optimalSpeedWheelTurn = (sizeBetweenWheels) * (PI/2)
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  randomSeed(4);
+  randomSeed(3543);
 
 }
 
@@ -104,7 +109,32 @@ int fromProbaToIndex(int first, int second, int third, int randomNumber){/*
   if(first<=randomNumber && randomNumber<(second+first))return 1;
   if((second+first)<=randomNumber && randomNumber<(third+second+first)) return 2;
 }
-
+void dodgingObstacle(double distanceToObstacle){
+  const int thresholdDistance = 25;
+  if(distanceToObstacle>thresholdDistance){
+    leftRight[0].x = positionOfRobot.x + (sizeBetweenWheels/2)*cos(currentAngle+PI/2); 
+    leftRight[0].y = positionOfRobot.y + (sizeBetweenWheels/2)*sin(currentAngle+PI/2); 
+    leftRight[0].canGoThere = checkIfCanGo(leftRight[0]);
+    leftRight[1].x = positionOfRobot.x + (sizeBetweenWheels/2)*cos(currentAngle+PI/2); 
+    leftRight[1].y = positionOfRobot.y + (sizeBetweenWheels/2)*sin(currentAngle+PI/2); 
+    leftRight[1].canGoThere = checkIfCanGo(leftRight[1]);
+    if(leftRight[0].canGoThere && leftRight[1].canGoThere ){
+      indexPosibility = random(3,5);
+    }
+    else if(leftRight[0].canGoThere){
+      indexPosibility = 3;
+    }
+    else{
+      indexPossibility = 4;
+    }
+    travellingToADestination = true;
+  }
+  else{
+    travellingToADestination = true;
+    backward = true;
+    wasGoingBack = true;
+  }
+}
 void loop() {
   if(count<maxIteration){
     goingHome = count>maxIteration*ratioBeforeGoingHome;
@@ -190,8 +220,8 @@ void loop() {
     if(travellingToADestination){
       if(goingBack){
         if(time_<40){
-           speedWheelRight = -50/4;
-           speedWheelLeft = -50/4;
+           speedWheelRight = -r/4;
+           speedWheelLeft = -r/4;
            if(time_==0 || time_==10||time_==20 || time_==30){
             valueX[4*count+time_/10] = positionOfRobot.x;
             valueY[4*count+time_/10] = positionOfRobot.y;
@@ -226,6 +256,14 @@ void loop() {
             speedWheelRight = optimalSpeedLower;
             speedWheelLeft = optimalSpeedUpper;          
           }
+          if(indexPosibility==3 ){
+            speedWheelRight = optimalSpeedWheelTurn;
+            speedWheelLeft = 0;          
+          }
+          if(indexPosibility==4){
+            speedWheelRight = 0;
+            speedWheelLeft = optimalSpeedWheelTurn;          
+          }            
          if(time_==0 || time_==10 ||time_==20 || time_==30){
      
       valueX[4*count+time_/10] = positionOfRobot.x;
