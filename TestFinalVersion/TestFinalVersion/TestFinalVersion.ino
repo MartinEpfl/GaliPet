@@ -62,7 +62,7 @@ byte incomingByte; //Byte being read from user
 ////////////////Compass//////////
 int angleCompass = 0;
 boolean needToInitializeAngle = true;
-
+double initialDifference = 0;
 ///////Servo of the Arm////////////
 
 Servo servoArm;
@@ -117,7 +117,8 @@ Encoder rightEncoder(rightEncoder0pinA,rightEncoder0pinB);
 unsigned long previousTime = millis();
 unsigned long currentTime = millis();
 unsigned long diffTime = currentTime - previousTime;
-
+unsigned long timeBeforeDelay = millis();
+unsigned long timeAfterDelay = millis();
 
 
 //PID for motor control
@@ -138,6 +139,7 @@ void setup() {
   Serial2.begin(9600); //Compass has a Baud Rate of 9600
   randomSeed(3543);
   readValueCompass();
+  initialDifference = angleCompass  - currentAngle;
   pinMode(E1, OUTPUT);
   pinMode(M1, OUTPUT);
   pinMode(E2, OUTPUT);
@@ -181,7 +183,10 @@ void loop() {
     currentTime = millis();
     diffTime = currentTime - previousTime;
     Serial.println(diffTime);
-    delay(20);
+    timeBeforeDelay = millis();
+    delay(20-(timeBeforeDelay -  timeAfterDelay)); //Always 20 ms
+
+    timeAfterDelay = millis();
     durationLeft = abs(leftEncoder.read()); //Reads the left accumulated encodeur
     durationRight = abs(rightEncoder.read()); //Reads the value accumulated on the right encodeur
     speedWheelLeft = 1000*factorPulseToDistance*durationLeft/diffTime; //  cm/s
@@ -194,11 +199,15 @@ void loop() {
     rightPID.Compute();
     analogWrite(E1, pwmOutLeft);
     analogWrite(E2, pwmOutRight);
+    Serial.print(currentAngle);
+    Serial.print(" VS ");
+    Serial.println(angleCompass);
+    /*
           Serial.print("Position du robot : (");
       Serial.print(positionOfRobot.x);
       Serial.print(";");
       Serial.print(positionOfRobot.y);
-      Serial.println(")");
+      Serial.println(")");*/
     /*
     
     Serial.print("Diff on X : ");
@@ -411,9 +420,7 @@ void readValueCompass(){
       }
     }
   }
-  if(needToInitializeAngle){
-    
-  }
+  angleCompass = 2*PI*(360-angleCompass)/360 - initialDifference;
 }
 
 void dodgingObstacle(double distanceToObstacle){
