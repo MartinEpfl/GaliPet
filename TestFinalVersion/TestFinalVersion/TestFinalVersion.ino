@@ -12,7 +12,7 @@ typedef struct {
 } position_;    
 
 const int sizeBadArea = 300; //3 meters for each arena we don't want to go in
-//const int sizeOfFullArena = 800; //IF FULL ARENA
+const int sizeOfFullArena = 800; //IF FULL ARENA
 
 const int sizeArenaWidth = 200; //IF SMALL ARENA
 const int sizeArenaHeight = 400; //IF SMALL ARENA
@@ -43,6 +43,7 @@ int time_ = 0;
 double speedWheelRight = 0; //cm/s Speed of left wheel
 double speedWheelLeft = 0; //Speed of right wheel
 double sizeBetweenWheels = 38.3; //cm
+double sizeHeight = 41; //cm
 double timeBetweenRead = 1;
 double distanceLeft ;
 double distanceRight;
@@ -480,33 +481,65 @@ void odometry(){
 
   currentAngle = currentAngle + phi; //New angle for our robot, to calibrate with the compass
 }
- //MADE FOR FULL ARENA 
- /* 
+
 bool checkIfCanGo(position_ destination){
-  if(destination.x<(sizeBadArea+epsilon)  && destination.y>(sizeOfFullArena-sizeBadArea-epsilon)){ //Rock area
+  position_ corners[4]; //Top left, top right, bottom right, bottom left
+  corners[0].x = destination.x + cos(currentAngle + PI/2)*sizeBetweenWheels/2;
+  corners[0].y = destination.y + sin(currentAngle + PI/2)*sizeBetweenWheels/2;
+  
+  corners[1].x = destination.x + cos(currentAngle - PI/2)*sizeBetweenWheels/2;
+  corners[1].y = destination.y + sin(currentAngle - PI/2)*sizeBetweenWheels/2;
+  
+  corners[2].x = destination.x + cos(currentAngle - 3*PI/4)*sizeHeight;
+  corners[2].y = destination.y + sin(currentAngle - 3*PI/4)*sizeHeight;
+  
+  corners[3].x = destination.x + cos(currentAngle + 3*PI/4)*sizeHeight;
+  corners[3].y = destination.y + sin(currentAngle + 3*PI/4)*sizeHeight;
+
+
+  for(int i=0; i<4;i++){
+    if(!checkWalls(corners[i])){
+      return false;
+    }
+    //Uncomment this if u want to check full arena
+   /* if(!checkGrass(corners[i]) ||  !checkRocks(corners[i]) || !checkUpperPart(corners[i]) ){
+      return false;
+    }*/
+  }
+  if(!checkWalls(destination)){
     return false;
   }
-  if(destination.x>(sizeOfFullArena-sizeBadArea-epsilon) && destination.y>(sizeOfFullArena-sizeBadArea-epsilon)){ //Upper ramp area
-    return false;
-  }
-  if(destination.x>(sizeOfFullArena-sizeBadArea-epsilon) && destination.y<(sizeBadArea+epsilon)){ //Grass area
-    return false;
-  }
-  if(destination.x<epsilon || destination.x>sizeOfFullArena-epsilon || destination.y<epsilon || destination.y>sizeOfFullArena-epsilon){ //Don't get out of the arena
-    return false;
-  }
-  return true; //Otherwise it is OK
-  }*/
-//MADE FOR SMALLER ARENA
-bool checkIfCanGo(position_ destination){
+  return true;
+}
+
+bool checkWalls(position_ destination){
   if(destination.x<epsilon || destination.x>(sizeArenaWidth-epsilon) || destination.y<epsilon || destination.y>(sizeArenaHeight-epsilon)){ //Don't get out of the arena
     return false;
   }
   return true; //Otherwise it is OK
-  }
+}
 
-  
-  
+bool checkGrass(position_ destination){
+  if(destination.x>(sizeOfFullArena-sizeBadArea-epsilon) && destination.y<(sizeBadArea+epsilon)){ //Grass area
+    return false;
+  }
+  return true;
+}
+
+bool checkRocks(position_ destination){
+  if(destination.x<(sizeBadArea+epsilon)  && destination.y>(sizeOfFullArena-sizeBadArea-epsilon)){ //Rock area
+    return false;
+  }
+  return true;
+}
+
+bool checkUpperPart(position_ destination){
+  if(destination.x>(sizeOfFullArena-sizeBadArea-epsilon) && destination.y>(sizeOfFullArena-sizeBadArea-epsilon)){ //Upper ramp area
+    return false;
+  }
+  return true;
+}
+
 int returnPossibilitiesFromPosition(double x, double y, double angleToAdd){
   int toReturn = 0;
   position_ arrayPossibilities[3];
