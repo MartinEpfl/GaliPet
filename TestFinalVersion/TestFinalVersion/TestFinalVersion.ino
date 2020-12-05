@@ -51,12 +51,16 @@ double distanceCenter = (distanceLeft + distanceRight)/2;
 double phi = 0;
 double currentAngle = PI/4; //Starting angle
 
-int howManySeconds = 2;
 const int optimalSpeedLower = (r-sizeBetweenWheels/2)*(PI/4);
 const int optimalSpeedUpper = (r+sizeBetweenWheels/2)*(PI/4);
 const int optimalSpeedForward = r;
 const int optimalSpeedBackward = optimalSpeedForward;
 const int optimalSpeedTurn = sizeBetweenWheels * (PI/2);
+/////////Number of iteration for each movement (Each iteration is 20 ms, so if time_ is 40 then the robot will do the move for 800 ms/ 0.8s)
+const int time_forward = 40;
+const int time_turn = 40;
+const int time_dodge = 40;
+
 /////////////////////////////////////////////////////
 byte incomingByte; //Byte being read from user
 //All the speeds are in ms/angle (it is not a speed I know it's the inverse of a speed
@@ -320,7 +324,70 @@ void loop() {
 
       else{
         goingBack = false;
-        if(time_<40){
+        if(indexPosibility==0){
+          if(time_<time_turn){
+            turn_L(optimalSpeedLower, optimalSpeedUpper);  
+            time_++;         
+          }
+          else{
+            time_ =0;
+            travellingToADestination = false;
+            count++; 
+          }
+          //      Serial.println("MOVING LEFt");
+        }
+        if(indexPosibility==1){
+          if(time_<time_forward){
+            advance(optimalSpeedForward,optimalSpeedForward);
+            time_++; 
+          }
+          else{
+            time_ =0;
+            travellingToADestination = false;
+            count++; 
+          }
+          //      Serial.println("MOVING FORWARD");
+        }
+        if(indexPosibility==2){
+          if(time_<time_turn){
+            turn_R(optimalSpeedUpper,optimalSpeedLower);
+            time_++; 
+          }
+          else{
+            time_ =0;
+            travellingToADestination = false;
+            count++; 
+          }
+          //      Serial.println("MOVING RIGHT");
+        }
+        if(indexPosibility==3){
+          if(time_<time_dodge){
+           turn_L(0, optimalSpeedTurn);
+           time_++; 
+          }
+          else{
+            time_ =0;
+            travellingToADestination = false;
+            count++; 
+          }
+          //      Serial.println("DODGING RIGHT");
+        }
+        if(indexPosibility==4){
+          if(time_<time_dodge){
+           turn_R(0, optimalSpeedTurn);
+           time_++; 
+          }
+           else{
+            time_ =0;
+            travellingToADestination = false;
+            count++; 
+          }
+
+          //      Serial.println("DODGING RIGHT");
+        }                               
+
+        //////////////////////////////////////////////////////////////////////
+       /* if(time_<40){
           if(indexPosibility==0){
               turn_L(optimalSpeedLower, optimalSpeedUpper);
                     //      Serial.println("MOVING LEFt");
@@ -349,8 +416,7 @@ void loop() {
           
          }
          if(time_==0 || time_==10 ||time_==20 || time_==30){
-     
-      valueX[4*count+time_/10] = positionOfRobot.x;
+          valueX[4*count+time_/10] = positionOfRobot.x;
           valueY[4*count+time_/10] = positionOfRobot.y;
          }
          time_++;
@@ -361,7 +427,7 @@ void loop() {
           travellingToADestination = false;
           count++;  
 
-        }
+        }*/
      //  positionOfRobot.x =   possibilities[indexPosibility].x;
       // positionOfRobot.y =   possibilities[indexPosibility].y;
       // currentAngle += angles[indexPosibility];      
