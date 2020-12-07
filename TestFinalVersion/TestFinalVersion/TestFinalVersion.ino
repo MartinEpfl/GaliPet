@@ -67,6 +67,7 @@ byte incomingByte; //Byte being read from user
 
 ////////////////Compass//////////
 int angleCompass = 0;
+int oldValuesCompass[10];
 boolean needToInitializeAngle = true;
 double initialDifference = 0;
 ///////Servo of the Arm////////////
@@ -145,7 +146,7 @@ void setup() {
   Serial2.begin(9600); //Compass has a Baud Rate of 9600
   randomSeed(3543);
 
-  //readValueCompass();
+  readValueCompass();
   initialDifference = angleCompass  - currentAngle;
   pinMode(E1, OUTPUT);
   pinMode(M1, OUTPUT);
@@ -179,7 +180,7 @@ void setup() {
 
 void loop() {
   if(count<maxIteration){
-    //readValueCompass();
+    readValueCompass();
     Serial.println(angleCompass);
    // Serial.println("--------------");
  //   Serial.println(pwmOutLeft);
@@ -446,7 +447,7 @@ void loop() {
    // delay(100);  
 
   }
-   if(count<maxIteration ){
+   if(count==maxIteration ){
     Serial.println("DONE!");
     Serial.print("x = [");
     for(int i=0;i<4*(maxIteration-1);i++){
@@ -484,6 +485,8 @@ void readValueCompass(){
   boolean readByte = false;
   boolean value = false;
   double ratio;
+  oldValuesCompass
+  double tempAngleCompass;
   Serial2.write(0x31); //Asking for the angle, for each command sent you get 8 byte as an answer
   //First byte, enter => New Line => hundreds of angle => tens of angle => bits of angle => Decimal point of angle => Decimal of angle => Calibrate sum
   while (!value) {
@@ -491,12 +494,14 @@ void readValueCompass(){
       valeurByte[stack] = Serial2.read(); //Read the value & stacks it
       stack = (stack + 1) % 8; //Allows to read the full 8 bytes
       if (stack == 0) {
-        angleCompass = (valeurByte[2] - 48) * 100 + (valeurByte[3] - 48) * 10 + (valeurByte[4] - 48); //Computes the angle by reading bytes 
+        tempAngleCompass = (valeurByte[2] - 48) * 100 + (valeurByte[3] - 48) * 10 + (valeurByte[4] - 48); //Computes the angle by reading bytes 
         value = true;
       }
     }
   }
-  angleCompass = 2*PI*(360-angleCompass)/360 - initialDifference;
+  if(tempAngleCompass<360 and tempAngleCompass>=0){
+    angleCompass = 2*PI*(360-tempAngleCompass)/360 - initialDifference;   
+  }
 }
 
 void dodgingObstacle(double distanceToObstacle){
