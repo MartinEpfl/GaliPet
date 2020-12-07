@@ -174,7 +174,7 @@ void setup() {
   rightPID.SetMode(AUTOMATIC);
   rightPID.SetSampleTime(10);
   Serial.println(pwmOutLeft);
-  
+  Serial.println(pwmOutRight);
 }
 
 void loop() {
@@ -190,8 +190,11 @@ void loop() {
     currentTime = millis();
     diffTime = currentTime - previousTime;
     Serial.println(diffTime);
+    delay(1000);
     timeBeforeDelay = millis();
-    delay(20-(timeBeforeDelay -  timeAfterDelay)); //Always 20 ms
+    //Serial.print("THIS IS MINUS : ");
+   // Serial.println(20 - (timeBeforeDelay -  timeAfterDelay));
+  //  delay(30 - (timeBeforeDelay -  timeAfterDelay));//-(timeBeforeDelay -  timeAfterDelay)); //Always 20 ms
 
     timeAfterDelay = millis();
     durationLeft = abs(leftEncoder.read()); //Reads the left accumulated encodeur
@@ -338,7 +341,7 @@ void loop() {
             travellingToADestination = false;
             count++; 
           }
-          //      Serial.println("MOVING LEFt");
+               Serial.println("MOVING LEFt");
         }
         if(indexPosibility==1){
           if(time_<time_forward){
@@ -350,7 +353,7 @@ void loop() {
             travellingToADestination = false;
             count++; 
           }
-          //      Serial.println("MOVING FORWARD");
+               Serial.println("MOVING FORWARD");
         }
         if(indexPosibility==2){
           if(time_<time_turn){
@@ -362,7 +365,7 @@ void loop() {
             travellingToADestination = false;
             count++; 
           }
-          //      Serial.println("MOVING RIGHT");
+                Serial.println("MOVING RIGHT");
         }
         if(indexPosibility==3){
           if(time_<time_dodge){
@@ -374,7 +377,7 @@ void loop() {
             travellingToADestination = false;
             count++; 
           }
-          //      Serial.println("DODGING RIGHT");
+                Serial.println("DODGING RIGHT");
         }
         if(indexPosibility==4){
           if(time_<time_dodge){
@@ -387,11 +390,11 @@ void loop() {
             count++; 
           }
 
-          //      Serial.println("DODGING RIGHT");
+                Serial.println("DODGING RIGHT");
         }                               
 
         //////////////////////////////////////////////////////////////////////
-       /* if(time_<40){
+        /*if(time_<40){
           if(indexPosibility==0){
               turn_L(optimalSpeedLower, optimalSpeedUpper);
                     //      Serial.println("MOVING LEFt");
@@ -443,7 +446,7 @@ void loop() {
    // delay(100);  
 
   }
-   if(count==maxIteration ){
+   if(count<maxIteration ){
     Serial.println("DONE!");
     Serial.print("x = [");
     for(int i=0;i<4*(maxIteration-1);i++){
@@ -576,16 +579,16 @@ bool checkIfCanGo(position_ destination){
       Serial.println(i) ;    
   }
   Serial.println("----------------");*/
-/*
+
   for(int i=0; i<4;i++){
     if(!checkWalls(corners[i])){
       return false;
-    }*/
+    }
     //Uncomment this if u want to check full arena
    /* if(!checkGrass(corners[i]) ||  !checkRocks(corners[i]) || !checkUpperPart(corners[i]) ){
       return false;
     }*/
-  //}
+  }
   if(!checkWalls(destination)){
     return false;
   }
