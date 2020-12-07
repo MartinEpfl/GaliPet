@@ -16,7 +16,7 @@ const int sizeOfFullArena = 800; //IF FULL ARENA
 
 const int sizeArenaWidth = 200; //IF SMALL ARENA
 const int sizeArenaHeight = 400; //IF SMALL ARENA
-const double epsilon = 40; //How close you dont want to get close to the area you don't want to go in
+const double epsilon = 10; //How close you dont want to get close to the area you don't want to go in
 const double r = 35; //Radius of circle
 
 position_ leftRight[2];
@@ -209,7 +209,7 @@ void loop() {
     Serial.print(currentAngle);
     Serial.print(" VS ");
     Serial.println(angleCompass);*/
-    /*
+    
           Serial.print("Position du robot : (");
       Serial.print(positionOfRobot.x);
       Serial.print(";");
@@ -278,6 +278,9 @@ void loop() {
           int indexToHome = 0;
           int distanceMin = 1131; //sqrt(2*800*800)
           int distanceI;
+          if(positionOfRobot.x<100 and positionOfRobot.y < 100){
+            count= maxIteration -1;
+          }
           for(int i= 0; i<3;i++){
             distanceI = sqrt(possibilities[i].x * possibilities[i].x + possibilities[i].y*possibilities[i].y);
           /*  Serial.print("Value of distance I : ");
@@ -303,6 +306,7 @@ void loop() {
           back_off(optimalSpeedBackward,optimalSpeedBackward);
            //speedWheelRight = -r/4;
            //speedWheelLeft = -r/4;
+           Serial.println("GOING BACK");
            if(time_==0 || time_==10||time_==20 || time_==30){
             valueX[4*count+time_/10] = positionOfRobot.x;
             valueY[4*count+time_/10] = positionOfRobot.y;
@@ -548,6 +552,7 @@ void odometry(){
   currentAngle = currentAngle + phi; //New angle for our robot, to calibrate with the compass
 }
 
+double distanceToBackcorners = sqrt(sizeBetweenWheels/2 * sizeBetweenWheels/2 + sizeHeight * sizeHeight);
 bool checkIfCanGo(position_ destination){
   position_ corners[4]; //Top left, top right, bottom right, bottom left
   corners[0].x = destination.x + cos(currentAngle + PI/2)*sizeBetweenWheels/2;
@@ -556,22 +561,31 @@ bool checkIfCanGo(position_ destination){
   corners[1].x = destination.x + cos(currentAngle - PI/2)*sizeBetweenWheels/2;
   corners[1].y = destination.y + sin(currentAngle - PI/2)*sizeBetweenWheels/2;
   
-  corners[2].x = destination.x + cos(currentAngle - 3*PI/4)*sizeHeight;
-  corners[2].y = destination.y + sin(currentAngle - 3*PI/4)*sizeHeight;
+  corners[2].x = destination.x + cos(currentAngle - 3*PI/4)*distanceToBackcorners;
+  corners[2].y = destination.y + sin(currentAngle - 3*PI/4)*distanceToBackcorners;
   
-  corners[3].x = destination.x + cos(currentAngle + 3*PI/4)*sizeHeight;
-  corners[3].y = destination.y + sin(currentAngle + 3*PI/4)*sizeHeight;
-
-
+  corners[3].x = destination.x + cos(currentAngle + 3*PI/4)*distanceToBackcorners;
+  corners[3].y = destination.y + sin(currentAngle + 3*PI/4)*distanceToBackcorners;
+  /*
+  for(int i=0; i<4;i++){
+      Serial.print("THIS CORNER DOESNT WORK : ");
+      Serial.print(corners[i].x);
+      Serial.print(" ; ");
+      Serial.print(corners[i].y);
+      Serial.print(") THIS IS i :");
+      Serial.println(i) ;    
+  }
+  Serial.println("----------------");*/
+/*
   for(int i=0; i<4;i++){
     if(!checkWalls(corners[i])){
       return false;
-    }
+    }*/
     //Uncomment this if u want to check full arena
    /* if(!checkGrass(corners[i]) ||  !checkRocks(corners[i]) || !checkUpperPart(corners[i]) ){
       return false;
     }*/
-  }
+  //}
   if(!checkWalls(destination)){
     return false;
   }
