@@ -24,9 +24,11 @@ void loop() {
 
   Serial.print("Value of the angle : ");
   Serial.println(updateCompassValue());
+  delay(waitingBetweenAngle);
 }
 
 double updateCompassValue(){
+  Serial.println("Updating the array :");
   double average = 0;
   for(int i=0;i<numberOfValues;i++){
     average+= oldValues[i];
@@ -36,6 +38,10 @@ double updateCompassValue(){
     canExit = true;
     tempAngle = getCompassValue();
     if(abs(tempAngle-average)>strictOnCompassSetUp){
+        Serial.print("Average is :");
+        Serial.print(average);
+        Serial.print("and the value of the angle read is : ");
+        Serial.println(tempAngle);
       canExit = false;
       delay(waitingBetweenAngle);
   }
@@ -74,9 +80,9 @@ double getCompassValue() {
 
 void gettingCompassReady(){
   bool canExit = true;
-  int index = 0;
   double value = 0;
   double average = 0;
+  Serial.println("Getting compass ready");
   for(int i=0;i<numberOfValues;i++){
     oldValues[i] = getCompassValue();
     delay(waitingBetweenAngle);
@@ -94,6 +100,12 @@ void gettingCompassReady(){
     average/=numberOfValues;
     for(int i=0;i<numberOfValues;i++){
       if(abs(oldValues[i]-average)>strictOnCompassSetUp){
+        Serial.print("Average is :");
+        Serial.print(average);
+        Serial.print("and the value of the array is : ");
+        Serial.print(oldValues[i]);
+        Serial.print(" for a value of i : ");
+        Serial.println(i);
         canExit = false;
       }
     }     
