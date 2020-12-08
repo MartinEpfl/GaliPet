@@ -5,8 +5,8 @@ int stack =0;
 boolean readByte = false;
 int waitingBetweenAngle = 300; //Waiting time between output each value
 boolean value = true;
-const int numberOfValues = 5;
-char oldValues[numberOfValues ];
+const int numberOfValues = 15;
+double oldValues[numberOfValues ];
 int index = 0;
 const int strictOnCompassSetUp = 2;
 bool needToSetUp = true;
@@ -16,7 +16,7 @@ double tempAngle;
 void setup() {
 
   Serial.begin(9600);
-  Serial2.begin(9600); //Compass has a Baud Rate of 9600
+  Serial3.begin(9600); //Compass has a Baud Rate of 9600
   gettingCompassReady();
 }
 
@@ -55,18 +55,21 @@ double updateCompassValue(){
 double getCompassValue() {
 
   value = false;
-  Serial2.write(0x31); //Asking for the angle, for each command sent you get 8 byte as an answer
+  Serial3.write(0x31); //Asking for the angle, for each command sent you get 8 byte as an answer
   //First byte, enter => New Line => hundreds of angle => tens of angle => bits of angle => Decimal point of angle => Decimal of angle => Calibrate sum
   while (!value) {
-    Serial.println("STUCK");
-    Serial2.write(0x31); ///NEEDED?
-    if (Serial2.available()) {
-      valeurByte[stack] = Serial2.read(); //Read the value & stacks it
+   // Serial.println("STUCK");
+   // Serial3.write(0x31); ///NEEDED?
+    if (Serial3.available()) {
+      //Serial.println("INSIDE");
+      valeurByte[stack] = Serial3.read(); //Read the value & stacks it
       stack = (stack + 1) % 8; //Allows to read the full 8 bytes
       if (stack == 0) {
         angle = (valeurByte[2] - 48) * 100 + (valeurByte[3] - 48) * 10 + (valeurByte[4] - 48); //Computes the angle using the read bytes 
         if(angle>=0 and angle<360){
           value = true;
+          Serial.print("VALUE AT THE ROOT IS : ");
+          Serial.println(angle);
         }
         else{
           delay(waitingBetweenAngle);
@@ -84,7 +87,10 @@ void gettingCompassReady(){
   double average = 0;
   Serial.println("Getting compass ready");
   for(int i=0;i<numberOfValues;i++){
+
     oldValues[i] = getCompassValue();
+        Serial.print(" coéputing the average : ");
+    Serial.println(oldValues[i]);
     delay(waitingBetweenAngle);
   }
   do{
