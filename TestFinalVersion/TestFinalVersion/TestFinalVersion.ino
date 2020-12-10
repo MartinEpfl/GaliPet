@@ -17,7 +17,7 @@ const int sizeOfFullArena = 800; //IF FULL ARENA
 const int sizeArenaWidth = 200; //IF SMALL ARENA
 const int sizeArenaHeight = 400; //IF SMALL ARENA
 const double epsilon = 10; //How close you dont want to get close to the area you don't want to go in
-const double r = 35; //Radius of circle
+const double r = 40; //Radius of circle
 
 position_ leftRight[2];
 
@@ -56,7 +56,7 @@ const int optimalSpeedUpper = (r+sizeBetweenWheels/2)*(PI/4);
 const int optimalSpeedForward = r;
 const int optimalSpeedBackward = optimalSpeedForward;
 const int optimalSpeedTurn = sizeBetweenWheels * (PI/2);
-/////////Number of iteration for each movement (Each iteration is 20 ms, so if time_ is 40 then the robot will do the move for 800 ms/ 0.8s)
+/////////Number of iteration for each movement (Each iteration is about 43 ms, so if time_ is 40 then the robot will do the move for 1600 ms/ 1.6s)
 const int time_forward = 40;
 const int time_turn = 40;
 const int time_dodge = 40;
@@ -66,9 +66,7 @@ byte incomingByte; //Byte being read from user
 //All the speeds are in ms/angle (it is not a speed I know it's the inverse of a speed
 
 ////////////////Compass//////////
-int angleCompass = 0;
-int oldValuesCompass[10];
-boolean needToInitializeAngle = true;
+double angleCompass = 0;
 double initialDifference = 0;
 ///////Servo of the Arm////////////
 
@@ -143,11 +141,11 @@ PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight,5.1,0.5,0.005, DI
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(19200);      //Set Baud Rate    
-  Serial2.begin(9600); //Compass has a Baud Rate of 9600
+  Serial3.begin(9600); //Compass has a Baud Rate of 9600
   randomSeed(3543);
 
   readValueCompass();
-  initialDifference = angleCompass  - currentAngle;
+  initialDifference = currentAngle - angleCompass ;
   pinMode(E1, OUTPUT);
   pinMode(M1, OUTPUT);
   pinMode(E2, OUTPUT);
@@ -179,9 +177,9 @@ void setup() {
 }
 
 void loop() {
+   readValueCompass();
   if(count<maxIteration){
-    readValueCompass();
-    Serial.println(angleCompass);
+
    // Serial.println("--------------");
  //   Serial.println(pwmOutLeft);
   //  Serial.println(targetSpeedLeft);
@@ -190,8 +188,9 @@ void loop() {
     previousTime = currentTime;
     currentTime = millis();
     diffTime = currentTime - previousTime;
+    Serial.print("THIS IS DIFF TIME : ");
     Serial.println(diffTime);
-    delay(1000);
+    delay(20);
     timeBeforeDelay = millis();
     //Serial.print("THIS IS MINUS : ");
    // Serial.println(20 - (timeBeforeDelay -  timeAfterDelay));
@@ -308,8 +307,6 @@ void loop() {
       if(goingBack){
         if(time_<40){
           back_off(optimalSpeedBackward,optimalSpeedBackward);
-           //speedWheelRight = -r/4;
-           //speedWheelLeft = -r/4;
            Serial.println("GOING BACK");
            if(time_==0 || time_==10||time_==20 || time_==30){
             valueX[4*count+time_/10] = positionOfRobot.x;
@@ -325,9 +322,6 @@ void loop() {
           goingBack = false; 
 
         }
-      
-    //    positionOfRobot.x += r*cos(currentAngle + PI);
-     //   positionOfRobot.y += r*sin(currentAngle + PI);
      }
 
       else{
@@ -342,7 +336,7 @@ void loop() {
             travellingToADestination = false;
             count++; 
           }
-               Serial.println("MOVING LEFt");
+             //  Serial.println("MOVING LEFt");
         }
         if(indexPosibility==1){
           if(time_<time_forward){
@@ -354,7 +348,7 @@ void loop() {
             travellingToADestination = false;
             count++; 
           }
-               Serial.println("MOVING FORWARD");
+             //  Serial.println("MOVING FORWARD");
         }
         if(indexPosibility==2){
           if(time_<time_turn){
@@ -366,7 +360,7 @@ void loop() {
             travellingToADestination = false;
             count++; 
           }
-                Serial.println("MOVING RIGHT");
+              //  Serial.println("MOVING RIGHT");
         }
         if(indexPosibility==3){
           if(time_<time_dodge){
@@ -378,7 +372,7 @@ void loop() {
             travellingToADestination = false;
             count++; 
           }
-                Serial.println("DODGING RIGHT");
+                //Serial.println("DODGING RIGHT");
         }
         if(indexPosibility==4){
           if(time_<time_dodge){
@@ -484,14 +478,12 @@ void readValueCompass(){
   int stack =0;
   boolean readByte = false;
   boolean value = false;
-  double ratio;
-  oldValuesCompass
   double tempAngleCompass;
-  Serial2.write(0x31); //Asking for the angle, for each command sent you get 8 byte as an answer
+  Serial3.write(0x31); //Asking for the angle, for each command sent you get 8 byte as an answer
   //First byte, enter => New Line => hundreds of angle => tens of angle => bits of angle => Decimal point of angle => Decimal of angle => Calibrate sum
   while (!value) {
-    if (Serial2.available()) {
-      valeurByte[stack] = Serial2.read(); //Read the value & stacks it
+    if (Serial3.available()) {
+      valeurByte[stack] = Serial3.read(); //Read the value & stacks it
       stack = (stack + 1) % 8; //Allows to read the full 8 bytes
       if (stack == 0) {
         tempAngleCompass = (valeurByte[2] - 48) * 100 + (valeurByte[3] - 48) * 10 + (valeurByte[4] - 48); //Computes the angle by reading bytes 
@@ -499,9 +491,14 @@ void readValueCompass(){
       }
     }
   }
+
   if(tempAngleCompass<360 and tempAngleCompass>=0){
-    angleCompass = 2*PI*(360-tempAngleCompass)/360 - initialDifference;   
+    angleCompass = 2*PI*(360-tempAngleCompass)/360 + initialDifference;   
   }
+        Serial.print("THIS IS THE ANGLE FROM THE COMPASS VALUE : ");
+    Serial.println(angleCompass);
+    Serial.print("THIS IS THE DIFF FROM THE TWO ANGLES : ");
+    Serial.println(abs(currentAngle-angleCompass ));
 }
 
 void dodgingObstacle(double distanceToObstacle){
@@ -556,7 +553,7 @@ void odometry(){
   Serial.print(positionOfRobot.x);
   Serial.print(" ; ");
   Serial.println(positionOfRobot.y);*/
-
+  //currentAngle = angleCompass;
   currentAngle = currentAngle + phi; //New angle for our robot, to calibrate with the compass
 }
 
