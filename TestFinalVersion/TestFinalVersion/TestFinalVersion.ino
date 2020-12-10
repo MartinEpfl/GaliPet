@@ -31,6 +31,7 @@ boolean travellingToADestination = false; //If it is going somewhere
 int indexPosibility;
 int count= 0;
 const int maxIteration = 100;
+bool robotIsHome = false;
 bool goingBack = false; //If the robot is moving backward
 bool wasGoingBack = false; //If the last movement was to go backward
 bool goingHome = false; //If the robot is going homer
@@ -178,7 +179,7 @@ void setup() {
 
 void loop() {
    readValueCompass();
-  if(count<maxIteration){
+  if(count<maxIteration && !robotIsHome){
 
    // Serial.println("--------------");
  //   Serial.println(pwmOutLeft);
@@ -282,7 +283,7 @@ void loop() {
           int distanceMin = 1131; //sqrt(2*800*800)
           int distanceI;
           if(positionOfRobot.x<100 and positionOfRobot.y < 100){
-            count= maxIteration -1;
+            robotIsHome = true;
           }
           for(int i= 0; i<3;i++){
             distanceI = sqrt(possibilities[i].x * possibilities[i].x + possibilities[i].y*possibilities[i].y);
@@ -441,7 +442,8 @@ void loop() {
    // delay(100);  
 
   }
-   if(count==maxIteration ){
+   if(count==maxIteration || robotIsHome ){
+    
     Serial.println("DONE!");
     Serial.print("x = [");
     for(int i=0;i<4*(maxIteration-1);i++){
@@ -465,8 +467,10 @@ void loop() {
     Serial.print(",");
     Serial.print(valueY[4*maxIteration-1]);
     Serial.println("]");
-    count++; 
+    count= maxIteration+2;
+    robotIsHome=false; 
     stop();
+    
   }
   
             
