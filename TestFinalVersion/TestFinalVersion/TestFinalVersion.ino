@@ -1,6 +1,8 @@
 #include <PID_v1.h>
 #include <Encoder.h>
 #include <Servo.h>
+#include <SharpIR.h>
+
 
 ////////////////////////////// NAVIGUATION ///////////////////////////////////////////
 
@@ -11,6 +13,11 @@ typedef struct {
     int howFar = 0;
 } position_;    
 
+
+
+
+
+
 const int sizeBadArea = 300; //3 meters for each arena we don't want to go in
 const int sizeOfFullArena = 800; //IF FULL ARENA
 
@@ -19,7 +26,7 @@ const int sizeArenaHeight = 400; //IF SMALL ARENA
 const double epsilon = 10; //How close you dont want to get close to the area you don't want to go in
 const double r = 40; //Radius of circle
 
-position_ leftRight[2];
+position_ leftRight[2]; //For dodging the obsacle
 
 
 position_ possibilities[3]; //Posibilities of where to go
@@ -69,6 +76,58 @@ byte incomingByte; //Byte being read from user
 ////////////////Compass//////////
 double angleCompass = 0;
 double initialDifference = 0;
+
+//////////////////////SENSORS//////////////////////////////////////
+
+const int window_size = 10;
+
+#define model80 1080
+#define model30 430
+#define pin A13
+
+struct sensor{ 
+  double read_value = 0;
+  double values_sensor[window_size];
+  int index = 0;
+  double average = 0;
+  int pinSensor;
+  SharpIR* mySensor;
+  
+  void sensorInit(int whichPin, int maxDistance){ //Max distance for the model, 30 if 30 cm max models, 80 otherwise
+      pinSensor = whichPin;
+      if(maxDistance ==30){
+        mySensor = new SharpIR(pinSensor, model30);
+      }
+      else if(maxDistance == 80){
+         mySensor = new SharpIR(pinSensor, model80);
+      }
+      else{
+         mySensor = new SharpIR(pinSensor, model30);
+      }
+        
+  }
+  void loop_sensor(){
+    read_value =  mySensor->distance(); 
+    values_sensor[index] = read_value;
+    index++;
+    index = index%window_size;
+  }
+
+  double get_value(){
+    average = 0;
+    for(int i=0; i<window_size;i++){
+      average += values_sensor[i];
+    }
+    return average/window_size;  
+  }
+};
+const int numberOfSensorsBack = 2;
+
+sensor sensorsBack[numberOfSensorsBack];
+int pinsBack[] = {12,13}; //Analog Pins for the back sensors
+double thresholdBackSensors = 15; //The value in cm before the robot stops going backward if there is an obstacle at less than this distance.
+
+
 ///////Servo of the Arm////////////
 
 Servo servoArm;
@@ -163,7 +222,7 @@ void setup() {
   positionOfBack = servoBack.read(); 
   Serial.println("Reseting the back...");
   servoBack.write(70);
-  back();
+
   
   // PIDs on
   
@@ -175,11 +234,26 @@ void setup() {
   rightPID.SetSampleTime(10);
   Serial.println(pwmOutLeft);
   Serial.println(pwmOutRight);
+
+
+  //Sensors ON 
+  for(int i=0; i<numberOfSensorsBack;i++){
+    sensorsBack[i].sensorInit(pinsBack[i], 30);
+  }
+
 }
 
 void loop() {
-   readValueCompass();
+  // readValueCompass();
   if(count<maxIteration && !robotIsHome){
+    if(time_%20==0){
+      readValueCompass();
+      Serial.println("READ COMPAS ---------------------------------------------");
+    }
+    //UPDATING THE BACK SENSORS :
+    for(int i=0;i<1;i++){
+      sensorsBack[i].loop_sensor();
+    }
 
    // Serial.println("--------------");
  //   Serial.println(pwmOutLeft);
@@ -191,7 +265,7 @@ void loop() {
     diffTime = currentTime - previousTime;
     Serial.print("THIS IS DIFF TIME : ");
     Serial.println(diffTime);
-    delay(20);
+  //  delay(50);
     timeBeforeDelay = millis();
     //Serial.print("THIS IS MINUS : ");
    // Serial.println(20 - (timeBeforeDelay -  timeAfterDelay));
@@ -209,7 +283,7 @@ void loop() {
     leftPID.Compute();
     rightPID.Compute();
     analogWrite(E1, pwmOutLeft);
-    analogWrite(E2, pwmOutRight);
+    analogWrite(E2, pwmOutRight);/*
     Serial.print(currentAngle);
     Serial.print(" VS ");
     Serial.println(angleCompass);*/
@@ -218,10 +292,9 @@ void loop() {
       Serial.print(positionOfRobot.x);
       Serial.print(";");
       Serial.print(positionOfRobot.y);
-      Serial.println(")");*/
+      Serial.println(")");
     /*
     
-    /*
     Serial.print("Diff on X : ");
     Serial.print(possibilities[indexPosibility].x - positionOfRobot.x);
     Serial.print("Diff on Y : ");
@@ -307,22 +380,32 @@ void loop() {
     }
     if(travellingToADestination){
       if(goingBack){
-        if(time_<40){
-          back_off(optimalSpeedBackward,optimalSpeedBackward);
-           Serial.println("GOING BACK");
-           if(time_==0 || time_==10||time_==20 || time_==30){
-            valueX[4*count+time_/10] = positionOfRobot.x;
-            valueY[4*count+time_/10] = positionOfRobot.y;
+        if(!noObstacleBehind()){
+          if(time_<40){
+            back_off(optimalSpeedBackward,optimalSpeedBackward);
+             Serial.println("GOING BACK");
+             if(time_==0 || time_==10||time_==20 || time_==30){
+              valueX[4*count+time_/10] = positionOfRobot.x;
+              valueY[4*count+time_/10] = positionOfRobot.y;
+            }
+             time_++;
+  
           }
-           time_++;
-
+        
+          else{
+            travellingToADestination = false;  
+            time_ = 0;
+            count++; 
+            goingBack = false; 
+  
+          }
         }
         else{
+          stop();
           travellingToADestination = false;  
           time_ = 0;
           count++; 
           goingBack = false; 
-
         }
      }
 
@@ -476,6 +559,15 @@ void loop() {
   
             
 
+}
+
+bool noObstacleBehind(){
+  for(int i=0; i<numberOfSensorsBack;i++){
+    if(sensorsBack[i].get_value()<thresholdBackSensors){
+      return false;
+    }
+  }
+  return true;
 }
 
 void readValueCompass(){
