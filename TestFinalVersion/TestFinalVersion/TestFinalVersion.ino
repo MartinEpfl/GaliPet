@@ -163,7 +163,7 @@ void setup() {
   positionOfBack = servoBack.read(); 
   Serial.println("Reseting the back...");
   servoBack.write(70);
-
+  back();
   
   // PIDs on
   
@@ -209,7 +209,7 @@ void loop() {
     leftPID.Compute();
     rightPID.Compute();
     analogWrite(E1, pwmOutLeft);
-    analogWrite(E2, pwmOutRight);/*
+    analogWrite(E2, pwmOutRight);
     Serial.print(currentAngle);
     Serial.print(" VS ");
     Serial.println(angleCompass);*/
@@ -218,9 +218,10 @@ void loop() {
       Serial.print(positionOfRobot.x);
       Serial.print(";");
       Serial.print(positionOfRobot.y);
-      Serial.println(")");
+      Serial.println(")");*/
     /*
     
+    /*
     Serial.print("Diff on X : ");
     Serial.print(possibilities[indexPosibility].x - positionOfRobot.x);
     Serial.print("Diff on Y : ");

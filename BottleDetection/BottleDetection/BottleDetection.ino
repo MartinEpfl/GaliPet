@@ -38,6 +38,7 @@
 #define M_IRPin A2
 #define R_IRPin A3
 #define T_IRPin A4
+#define B_IRPin A5
 
 #define model 1080
 
@@ -46,10 +47,11 @@ int distanceL;
 int distanceM;
 int distanceR;
 int distanceT;
+int distanceB;
 
                         //Tuning parameters
 
-int cutOffDistance = 220;
+int cutOffDistance = 200;
 
 /* Model :
   GP2Y0A02YK0F --> 20150
@@ -62,6 +64,7 @@ SharpIR sensorL = SharpIR(L_IRPin, model);
 SharpIR sensorM = SharpIR(M_IRPin, model);
 SharpIR sensorR = SharpIR(R_IRPin, model);
 SharpIR sensorT = SharpIR(T_IRPin, model);
+SharpIR sensorB = SharpIR(B_IRPin, model);
 
 
 int const numberOfInputs = 20;
@@ -84,8 +87,6 @@ void setup() {
                         // Begin serial communication at a baud rate of 9600:
   Serial.begin(9600);
 
-  
-
 }
 void loop() {
                         // Get a distance measurement and store it as distance_cm:
@@ -93,7 +94,7 @@ void loop() {
   distanceM = sensorM.distance();
   distanceR = sensorR.distance();
   distanceT = sensorT.distance();
-
+  distanceB = sensorT.distance();
 SUM = SUM - READINGS[INDEX];       // Remove the oldest entry from the sum
   VALUE = distanceM;        // Read the next sensor value
   READINGS[INDEX] = VALUE;           // Add the newest reading to the window
@@ -102,17 +103,21 @@ SUM = SUM - READINGS[INDEX];       // Remove the oldest entry from the sum
 
   AVERAGED = SUM / WINDOW_SIZE;      // Divide the sum of the window by the window size for the result
 
-
+/*
 Serial.print(distanceL);
 Serial.print(" ");
-Serial.print(AVERAGED);
+Serial.print(distanceM);
 Serial.print(" ");
 Serial.print(distanceR);
 Serial.print(" ");
-Serial.println(distanceT);
+Serial.print(distanceT);
+Serial.print(" ");
+Serial.println(distanceB);
+*/
+//Serial.print(" ");
+//Serial.println(distanceT);
 
 
-/*
 if (sensorT.distance()>cutOffDistance) { //No obstacle detected --> T=0
   if (sensorM.distance()>cutOffDistance) { //Nothing on middle sensor --> T=0 M=0
     if (sensorL.distance()>cutOffDistance) { // Noting on left sensor --> T=0 M=0 L=0
@@ -132,7 +137,12 @@ if (sensorT.distance()>cutOffDistance) { //No obstacle detected --> T=0
   else { //Middle sensor detects --> T=0 M=1
     if (sensorL.distance()<cutOffDistance) { // Left sensor detects --> T=0 M=1 L=1
       if (sensorR.distance()<cutOffDistance) { // Right sensor detects --> T=0 M=1 L=1 R=1
-        Serial.println("Catch bottle");
+        if (sensorB.distance()<cutOffDistance) { // Bottom sensor detects --> T=0 M=1 L=1 R=1 B=1
+          Serial.println("Catch bottle");
+        }
+        else { // Nothing on bottom detector --> T=0 M=1 L=1 R=1 B=1
+          Serial.println("Forward slowly");
+        }
       }
       else { // Nothing on right detector --> T=0 M=1 L=1 R=0
         Serial.println("Turn right and forward");
@@ -151,7 +161,8 @@ if (sensorT.distance()>cutOffDistance) { //No obstacle detected --> T=0
 else { // Top sensor detects --> T=1
   Serial.println("Obstacle detected");
 }
-*/
 
- // delay(100);
+
+  delay(100);
+
   }
