@@ -44,9 +44,18 @@ int E1 = 6;     //M1 Speed Control (PWM)
 int M1 = 27;     //M1 Direction Control (Digital)
 int E2 = 7; //M2 Speed Control (PWM)
 int M2 = 29; //M2 Direction control (Digital)
-int speedForward = 30 ; //Speed moving forward cm/s
+//int speedForward = 30 ; //Speed moving forward cm/s
 int speedBackward = 50; //Speed moving backward cm/s
 int speedTurning = 30; //Speed while turning cm/s
+
+const int r=30;
+const double sizeBetweenWheels = 38.3;
+ double speedForward = r;//(r-sizeBetweenWheels/2)*(PI/4);
+const int optimalSpeedUpper = (r+sizeBetweenWheels/2)*(PI/4);
+const int optimalSpeedLower = (r-sizeBetweenWheels/2)*(PI/4);
+
+
+
 double diameterWheels = 12; //cm
 double gearRatio = 74.83; //gear ratio of our pololu;
 double countsPerRevolution = 48;
@@ -83,20 +92,20 @@ double distanceLeft = speedWheelLeft * diffTime; //Distance travelled by the lef
 double distanceRight = speedWheelRight * diffTime;
 double distanceCenter = (distanceLeft + distanceRight)/2; //By the center of the robot (between the two wheels)
 double distanceSinceBeginning=0;
-double sizeBetweenWheels = 38.3; //Distance between the two wheels (TODO => CHANGE)
+//double sizeBetweenWheels = 38.3; //Distance between the two wheels (TODO => CHANGE)
 
 
 //PID for motor control
-
+double d = 2;
 //For the left motor
 double targetSpeedLeft = 0; //
 double pwmOutLeft = 0;
-PID leftPID(&speedWheelLeft, &pwmOutLeft, &targetSpeedLeft,5.1,0.5,0.005, DIRECT); 
+PID leftPID(&speedWheelLeft, &pwmOutLeft, &targetSpeedLeft,d,15,0.005, DIRECT); 
 
 //For the right motor
 double targetSpeedRight = 0;
 double pwmOutRight = 0;
-PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight,5.1,0.5,0.005, DIRECT); 
+PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight,d,15,0.005, DIRECT); 
 
 /*
 
@@ -145,10 +154,10 @@ void setup(void)
   // PIDs on
   leftPID.SetOutputLimits(0, 255);
   leftPID.SetMode(AUTOMATIC);
-  leftPID.SetSampleTime(10);
+  leftPID.SetSampleTime(5);
   rightPID.SetOutputLimits(0, 255);
   rightPID.SetMode(AUTOMATIC);
-  rightPID.SetSampleTime(10);
+  rightPID.SetSampleTime(5);
   
 
  // pixy.init(); 
@@ -193,7 +202,8 @@ void loop(void)
 
 //  pixyRead();
  
-  delay(10); //Needed because otherwise our loop function goes too fast
+  delay(40); //Needed because otherwise our loop function goes too fast
+       // advance (speedForward, speedForward);   //move forward in max speed
 
   
   if(Serial.available()){
@@ -211,10 +221,10 @@ void loop(void)
         back_off (speedBackward, speedForward);   //move back in max speed
         break;
       case 'a'://Turn Left
-        turn_L (speedTurning, speedTurning);
+        turn_L (optimalSpeedLower, optimalSpeedUpper);
         break;
       case 'd'://Turn Right
-        turn_R (speedTurning, speedTurning);
+        turn_R (optimalSpeedUpper, optimalSpeedLower);
         break;
       case 'l'://Arm goes down
         arm();
@@ -439,7 +449,7 @@ void back_off (char a, char b) //Move backward
 
 void turn_L (char a,char b)  //Turn Left
 {
-  digitalWrite(M1,LOW);
+  digitalWrite(M1,HIGH);
   digitalWrite(M2,LOW);
   
   targetSpeedLeft = a;
@@ -456,7 +466,7 @@ void turn_L (char a,char b)  //Turn Left
 void turn_R (char a,char b)  //Turn Right
 {
   digitalWrite(M1,HIGH);
-  digitalWrite(M2,HIGH);
+  digitalWrite(M2,LOW);
   
   targetSpeedLeft = a;
   targetSpeedRight = b;
