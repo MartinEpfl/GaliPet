@@ -25,13 +25,15 @@ const int sizeArenaWidth = 200; //IF SMALL ARENA
 const int sizeArenaHeight = 400; //IF SMALL ARENA
 const double epsilon = 10; //How close you dont want to get close to the area you don't want to go in
 const double r = 40; //Radius of circle
+position_ positionOfRobot; //Our robot
 
-position_ leftRight[2]; //For dodging the obsacle
+
+position_ leftRight[2]; //Possibilities for dodging the obsacle
 
 
 position_ possibilities[3]; //Posibilities of where to go
 const double angles[3] = {PI/4, 0,-PI/4,};
-position_ positionOfRobot; //Our robot
+
 
 bool destinationAvailable=false; //If there is somewhere to go
 boolean travellingToADestination = false; //If it is going somewhere
@@ -41,12 +43,13 @@ const int maxIteration = 100;
 bool robotIsHome = false;
 bool goingBack = false; //If the robot is moving backward
 bool wasGoingBack = false; //If the last movement was to go backward
-bool goingHome = false; //If the robot is going homer
+bool goingHome = false; //If the robot is going home
 double ratioBeforeGoingHome = 0.85 ;
 int totalFar = 0;
 double valueX[4*maxIteration];
 double valueY[4*maxIteration];
-int time_ = 0;
+
+
 //Odometry 
 double speedWheelRight = 0; //cm/s Speed of left wheel
 double speedWheelLeft = 0; //Speed of right wheel
@@ -59,12 +62,17 @@ double distanceCenter = (distanceLeft + distanceRight)/2;
 double phi = 0;
 double currentAngle = PI/4; //Starting angle
 
+
+//All the speed for going forward/going back/left & right
 const int optimalSpeedLower = (r-sizeBetweenWheels/2)*(PI/4);
 const int optimalSpeedUpper = (r+sizeBetweenWheels/2)*(PI/4);
 const int optimalSpeedForward = r;
 const int optimalSpeedBackward = optimalSpeedForward;
 const int optimalSpeedTurn = sizeBetweenWheels * (PI/2);
-/////////Number of iteration for each movement (Each iteration is about 43 ms, so if time_ is 40 then the robot will do the move for 1600 ms/ 1.6s)
+
+
+/////////Number of iteration for each movement (Each iteration is about X ms, so if time_ is 40 then the robot will do the move for 40*X ms/)
+int time_ = 0;
 const int time_forward = 40;
 const int time_turn = 40;
 const int time_dodge = 40;
@@ -142,6 +150,8 @@ int setspeed = 10;
 int waitingOnBottleTime = 1000; //Time waited on the bottle
 int intermediatePosition = 1000;
 
+
+///////Servo of the back/////////
 Servo servoBack;
 int pinServoBack = 9; //Pin of servo for the back (PWM)
 int positionOfBack;
@@ -243,23 +253,18 @@ void setup() {
 
 }
 
+
 void loop() {
-  // readValueCompass();
   if(count<maxIteration && !robotIsHome){
     if(time_%20==0){
+      //Updating the compass value
       readValueCompass();
-      Serial.println("READ COMPAS ---------------------------------------------");
     }
     //UPDATING THE BACK SENSORS :
     for(int i=0;i<1;i++){
       sensorsBack[i].loop_sensor();
     }
-
-   // Serial.println("--------------");
- //   Serial.println(pwmOutLeft);
-  //  Serial.println(targetSpeedLeft);
-//    Serial.println(speedWheelLeft);
-   // Serial.println("--------------");   
+ 
     previousTime = currentTime;
     currentTime = millis();
     diffTime = currentTime - previousTime;
@@ -303,6 +308,64 @@ void loop() {
     
    
     if(!travellingToADestination){
+      pickingADestination();  
+    }
+    
+    if(travellingToADestination){
+      goingToALocation();
+    }
+  }
+   if(count==maxIteration || robotIsHome ){
+    
+    Serial.println("DONE!");
+    Serial.print("x = [");
+    for(int i=0;i<4*(maxIteration-1);i++){
+      Serial.print(valueX[i]);
+      Serial.print(",");
+    }
+    Serial.print(valueX[4*maxIteration-3]);
+    Serial.print(",");
+    Serial.print(valueX[4*maxIteration-2]);
+    Serial.print(",");
+    Serial.print(valueX[4*maxIteration-1]);  
+    Serial.println("]");
+    Serial.print("y = [");
+    for(int i=0;i<4*(maxIteration-1);i++){
+      Serial.print(valueY[i]);
+      Serial.print(",");
+    }
+    Serial.print(valueY[4*maxIteration-3]);
+    Serial.print(",");
+    Serial.print(valueY[4*maxIteration-2]);
+    Serial.print(",");
+    Serial.print(valueY[4*maxIteration-1]);
+    Serial.println("]");
+    count= maxIteration+2;
+    robotIsHome=false; 
+    stop();
+    
+  }
+  
+            
+
+}
+
+
+//Checks the back sensors to make sure the robot can go backward
+//Returns false it there is an obstacle
+bool noObstacleBehind(){
+  for(int i=0; i<numberOfSensorsBack;i++){
+    if(sensorsBack[i].get_value()<thresholdBackSensors){
+      return false;
+    }
+  }
+  return true;
+}
+
+
+//If a location hasn't been picked yet then it will chose one
+void pickingADestination(){
+
       destinationAvailable=false;
       totalFar = 0;/*
       Serial.print("Position du robot : (");
@@ -336,13 +399,7 @@ void loop() {
       }
       if(totalFar==0)destinationAvailable=false;
       if(destinationAvailable){
-        travellingToADestination = true;/*
-        Serial.print("Proba d'aller a gauche:");
-        Serial.print(possibilities[0].howFar/(double)totalFar);
-        Serial.print("Proba d'aller au centre:");
-        Serial.print(possibilities[1].howFar/(double)totalFar);
-        Serial.print("Proba d'aller a droite:");
-        Serial.println(possibilities[2].howFar/(double)totalFar);*/
+        travellingToADestination = true;
         if(!goingHome){
           do{
             int random_ = random(0,totalFar);
@@ -361,8 +418,6 @@ void loop() {
           }
           for(int i= 0; i<3;i++){
             distanceI = sqrt(possibilities[i].x * possibilities[i].x + possibilities[i].y*possibilities[i].y);
-          /*  Serial.print("Value of distance I : ");
-            Serial.println(distanceI);*/
             if(distanceI<distanceMin && possibilities[i].canGoThere){
               indexToHome = i;
               distanceMin = distanceI;
@@ -377,8 +432,11 @@ void loop() {
         wasGoingBack = true;
         travellingToADestination = true;
       }
-    }
-    if(travellingToADestination){
+}
+
+
+//If a location has been picked then the robot will do the pre-determined movement
+void goingToALocation(){
       if(goingBack){
         if(!noObstacleBehind()){
           if(time_<40){
@@ -472,104 +530,10 @@ void loop() {
 
                 Serial.println("DODGING RIGHT");
         }                               
-
-        //////////////////////////////////////////////////////////////////////
-        /*if(time_<40){
-          if(indexPosibility==0){
-              turn_L(optimalSpeedLower, optimalSpeedUpper);
-                    //      Serial.println("MOVING LEFt");
-
-            //speedWheelRight = optimalSpeedUpper;
-            //speedWheelLeft = optimalSpeedLower;
-          }
-          if(indexPosibility==1){
-            advance(optimalSpeedForward,optimalSpeedForward);
-          //  Serial.println("MOVING FORWARD");
-            //speedWheelRight = r/4;
-           // speedWheelLeft = r/4;            
-          }
-          if(indexPosibility==2){
-            turn_R(optimalSpeedUpper,optimalSpeedLower);
-                   //     Serial.println("MOVING RIGHT");
-
-         //   speedWheelRight = optimalSpeedLower;
-         //   speedWheelLeft = optimalSpeedUpper;          
-          }
-         if(indexPosibility==3){
-           turn_L(0, optimalSpeedTurn);
-         }
-         if(indexPosibility==4){
-          turn_R(optimalSpeedTurn, 0);
-          
-         }
-         if(time_==0 || time_==10 ||time_==20 || time_==30){
-          valueX[4*count+time_/10] = positionOfRobot.x;
-          valueY[4*count+time_/10] = positionOfRobot.y;
-         }
-         time_++;
-
-        }
-        else{
-          time_ =0;
-          travellingToADestination = false;
-          count++;  
-
-        }*/
-     //  positionOfRobot.x =   possibilities[indexPosibility].x;
-      // positionOfRobot.y =   possibilities[indexPosibility].y;
-      // currentAngle += angles[indexPosibility];      
-      }
-     //HERE MUST CHANGE
-
-
-    }
-   // delay(100);  
-
   }
-   if(count==maxIteration || robotIsHome ){
-    
-    Serial.println("DONE!");
-    Serial.print("x = [");
-    for(int i=0;i<4*(maxIteration-1);i++){
-      Serial.print(valueX[i]);
-      Serial.print(",");
-    }
-    Serial.print(valueX[4*maxIteration-3]);
-    Serial.print(",");
-    Serial.print(valueX[4*maxIteration-2]);
-    Serial.print(",");
-    Serial.print(valueX[4*maxIteration-1]);  
-    Serial.println("]");
-    Serial.print("y = [");
-    for(int i=0;i<4*(maxIteration-1);i++){
-      Serial.print(valueY[i]);
-      Serial.print(",");
-    }
-    Serial.print(valueY[4*maxIteration-3]);
-    Serial.print(",");
-    Serial.print(valueY[4*maxIteration-2]);
-    Serial.print(",");
-    Serial.print(valueY[4*maxIteration-1]);
-    Serial.println("]");
-    count= maxIteration+2;
-    robotIsHome=false; 
-    stop();
-    
-  }
-  
-            
-
 }
 
-bool noObstacleBehind(){
-  for(int i=0; i<numberOfSensorsBack;i++){
-    if(sensorsBack[i].get_value()<thresholdBackSensors){
-      return false;
-    }
-  }
-  return true;
-}
-
+//Reading the angle from the compass, the angle read from the compass is going clock wise (counter trygonometric) and in degree. Both of these things have to be changed.
 void readValueCompass(){
   char valeurByte[8];
   int stack =0;
@@ -625,7 +589,7 @@ void dodgingObstacle(double distanceToObstacle){
   }
 }
 
-
+//Computes the new position of the robot & the angle that has to be changed using the compass
 void odometry(){
   if(digitalRead(M1) == HIGH){
     distanceLeft = factorPulseToDistance*durationLeft; //Distance travelled by the left wheel   
@@ -639,22 +603,18 @@ void odometry(){
   else{
     distanceRight = -factorPulseToDistance*durationRight; //Distance travelled by the right wheel   
   } 
- // distanceLeft = speedWheelLeft *  timeBetweenRead/10; //Distance from the left wheel since last check
-  //distanceRight = speedWheelRight *  timeBetweenRead/10; //for the right wheel
   distanceCenter = (distanceLeft + distanceRight)/2; //For the center of the two wheels
 
   phi = (distanceRight - distanceLeft)/sizeBetweenWheels;
   positionOfRobot.x = positionOfRobot.x + distanceCenter*cos(currentAngle);
   positionOfRobot.y = positionOfRobot.y + distanceCenter*sin(currentAngle);
-  /*
-  Serial.print(positionOfRobot.x);
-  Serial.print(" ; ");
-  Serial.println(positionOfRobot.y);*/
   //currentAngle = angleCompass;
   currentAngle = currentAngle + phi; //New angle for our robot, to calibrate with the compass
 }
 
-double distanceToBackcorners = sqrt(sizeBetweenWheels/2 * sizeBetweenWheels/2 + sizeHeight * sizeHeight);
+double distanceToBackcorners = sqrt(sizeBetweenWheels/2 * sizeBetweenWheels/2 + sizeHeight * sizeHeight); //The distance from the start
+
+//Checking if a position is valid
 bool checkIfCanGo(position_ destination){
   position_ corners[4]; //Top left, top right, bottom right, bottom left
   corners[0].x = destination.x + cos(currentAngle + PI/2)*sizeBetweenWheels/2;
@@ -694,6 +654,7 @@ bool checkIfCanGo(position_ destination){
   return true;
 }
 
+//Checks if a position is in a wall
 bool checkWalls(position_ destination){
   if(destination.x<epsilon || destination.x>(sizeArenaWidth-epsilon) || destination.y<epsilon || destination.y>(sizeArenaHeight-epsilon)){ //Don't get out of the arena
     return false;
@@ -701,6 +662,7 @@ bool checkWalls(position_ destination){
   return true; //Otherwise it is OK
 }
 
+//Check if a position is in the grass area
 bool checkGrass(position_ destination){
   if(destination.x>(sizeOfFullArena-sizeBadArea-epsilon) && destination.y<(sizeBadArea+epsilon)){ //Grass area
     return false;
@@ -708,6 +670,7 @@ bool checkGrass(position_ destination){
   return true;
 }
 
+//Check if a position is in the rock area
 bool checkRocks(position_ destination){
   if(destination.x<(sizeBadArea+epsilon)  && destination.y>(sizeOfFullArena-sizeBadArea-epsilon)){ //Rock area
     return false;
@@ -715,6 +678,8 @@ bool checkRocks(position_ destination){
   return true;
 }
 
+
+//Checks if a position is the upper part
 bool checkUpperPart(position_ destination){
   if(destination.x>(sizeOfFullArena-sizeBadArea-epsilon) && destination.y>(sizeOfFullArena-sizeBadArea-epsilon)){ //Upper ramp area
     return false;
@@ -722,6 +687,8 @@ bool checkUpperPart(position_ destination){
   return true;
 }
 
+
+//Returns the number of possible destinations available from a position
 int returnPossibilitiesFromPosition(double x, double y, double angleToAdd){
   int toReturn = 0;
   position_ arrayPossibilities[3];
@@ -737,16 +704,13 @@ int returnPossibilitiesFromPosition(double x, double y, double angleToAdd){
   return toReturn;
 }
 
-int fromProbaToIndex(int first, int second, int third, int randomNumber){/*
-  Serial.print("Second plus first : ");
-  Serial.print(second+first);
-  Serial.print(" ; random number :");
-  Serial.println(randomNumber);*/
+int fromProbaToIndex(int first, int second, int third, int randomNumber){
   if(randomNumber<first)return 0;
   if(first<=randomNumber && randomNumber<(second+first))return 1;
   if((second+first)<=randomNumber && randomNumber<(third+second+first)) return 2;
 }
 
+//The arm is going down
 void arm(){
   stop();
    Serial.println("Arm Turning...");
@@ -767,6 +731,7 @@ void arm(){
    Serial.println("-DONE TURNING-");
 }
 
+//The back is opening
 void back(){
    stop();
    Serial.println("Back opening...");
