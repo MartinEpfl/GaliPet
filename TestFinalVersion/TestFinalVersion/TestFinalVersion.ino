@@ -21,8 +21,8 @@ typedef struct {
 const int sizeBadAreaGrassX = 400;
 const int sizeBadAreaGrassY = 200;
 const int sizeBadAreaRockXY = 300;
-const int sizeBadAreaUpperX = 200;
-const int sizeBadAreaUpperY = 300;
+const int sizeBadAreaUpperX = 300;
+const int sizeBadAreaUpperY = 200;
 
 const int sizeOfFullArena = 800; //IF FULL ARENA
 
@@ -279,7 +279,7 @@ void loop() {
     if(time_%10==0){
       //Updating the compass value
       readValueCompass();
-      currentAngle = angleCompass;
+    //  currentAngle = angleCompass;
     }
     //UPDATING THE BACK SENSORS :
     for(int i=0;i<1;i++){
@@ -553,7 +553,7 @@ void goingToALocation(){
         }                               
   }
 }
-
+  
 //Reading the angle from the compass, the angle read from the compass is going clock wise (counter trygonometric) and in degree. Both of these things have to be changed.
 void readValueCompass(){
   char valeurByte[8];
@@ -574,11 +574,18 @@ void readValueCompass(){
     }
   }
   angleCompass = 2*PI*(360-tempAngleCompass)/360 + initialDifference;   
-  
+  if (angleCompass>2*PI){
+    angleCompass-=2*PI;
+  }
+  else if (angleCompass<0){ 
+    angleCompass+=(2*PI);
+  }
         Serial.print("THIS IS THE ANGLE FROM THE COMPASS VALUE : ");
-    Serial.println(angleCompass);
-    Serial.print("THIS IS THE DIFF FROM THE TWO ANGLES : ");
-    Serial.println(abs(currentAngle-angleCompass ));
+    Serial.println(angleCompass/(2*PI)*360);
+    Serial.print("THIS IS ANGLE FROM THE ODOMETRY : ");
+    Serial.println(currentAngle/(2*PI)*360);
+        Serial.print("THIS IS THE DIFF : ");
+    Serial.println(abs(currentAngle - angleCompass)/(2*PI)*360);
 }
 
 void dodgingObstacle(double distanceToObstacle){
@@ -628,6 +635,12 @@ void odometry(){
   positionOfRobot.x = positionOfRobot.x + distanceCenter*cos(currentAngle);
   positionOfRobot.y = positionOfRobot.y + distanceCenter*sin(currentAngle);
   currentAngle = currentAngle + phi; //New angle for our robot, to calibrate with the compass
+  if (currentAngle>2*PI){
+    currentAngle-=2*PI;
+  }
+  else if (currentAngle<0){
+    currentAngle+=(2*PI);
+  }
 //currentAngle = angleCompass;
 }
 
