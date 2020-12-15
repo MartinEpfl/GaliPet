@@ -8,6 +8,14 @@ typedef struct {
     int howFar = 0;
 } position_;    
 
+
+const int sizeBadAreaGrassX = 400;
+const int sizeBadAreaGrassY = 200;
+const int sizeBadAreaRockXY = 300;
+const int sizeBadAreaUpperX = 200;
+const int sizeBadAreaUpperY = 300;
+
+
 const int sizeBadArea = 300; //3 meters for each arena we don't want to go in
 const int sizeOfFullArena = 800;
 const double epsilon = 10; //How close you dont want to get close to the area you don't want to go in
@@ -27,7 +35,7 @@ const int maxIteration = 100;
 bool goingBack = false; //If the robot is moving backward
 bool wasGoingBack = false; //If the last movement was to go backward
 bool goingHome = false; //If the robot is going homer
-double ratioBeforeGoingHome = 1 ;
+double ratioBeforeGoingHome = 0.85;
 int totalFar = 0;
 double valueX[4*maxIteration];
 double valueY[4*maxIteration];
@@ -47,8 +55,8 @@ const int optimalSpeedUpper = (r+sizeBetweenWheels/2)*(PI/4)/4;
 const int optimalSpeedWheelTurn = (sizeBetweenWheels) * (PI/2);
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(9600);
-  randomSeed(11111);
+  Serial.begin(19200);
+  randomSeed(3543);
   positionOfRobot.x = 50;
   positionOfRobot.y = 50;
 }
@@ -85,7 +93,17 @@ bool checkIfCanGo(position_ destination){
   
   corners[3].x = destination.x + cos(currentAngle + 3*PI/4)*distanceToBackcorners;
   corners[3].y = destination.y + sin(currentAngle + 3*PI/4)*distanceToBackcorners;
-  
+  /*
+  for(int i=0; i<4;i++){
+      Serial.print("THIS CORNER DOESNT WORK : ");
+      Serial.print(corners[i].x);
+      Serial.print(" ; ");
+      Serial.print(corners[i].y);
+      Serial.print(") THIS IS i :");
+      Serial.println(i) ;    
+  }
+  Serial.println("----------------");*/
+
   for(int i=0; i<4;i++){
     if(!checkWalls(corners[i])){
       return false;
@@ -97,20 +115,22 @@ bool checkIfCanGo(position_ destination){
   }
   if(!checkWalls(destination)){
     return false;
-  }  
-
-  return true; //Otherwise it is OK
+  }
+  return true;
 }
 
+//Checks if a position is in a wall
 bool checkWalls(position_ destination){
   if(destination.x<epsilon || destination.x>(sizeOfFullArena-epsilon) || destination.y<epsilon || destination.y>(sizeOfFullArena-epsilon)){ //Don't get out of the arena
     return false;
   }
   return true; //Otherwise it is OK
-} 
+}
 
+
+//Check if a position is in the grass area
 bool checkGrass(position_ destination){
-  if(destination.x>(sizeOfFullArena-sizeBadArea-epsilon) && destination.y<(sizeBadArea+epsilon)){ //Grass area
+  if(destination.x>(sizeOfFullArena-sizeBadAreaGrassX-epsilon) && destination.y<(sizeBadAreaGrassY+epsilon)){ //Grass area
     return false;
   }
   return true;
@@ -118,7 +138,7 @@ bool checkGrass(position_ destination){
 
 //Check if a position is in the rock area
 bool checkRocks(position_ destination){
-  if(destination.x<(sizeBadArea+epsilon)  && destination.y>(sizeOfFullArena-sizeBadArea-epsilon)){ //Rock area
+  if(destination.x<(sizeBadAreaRockXY+epsilon)  && destination.y>(sizeOfFullArena-sizeBadAreaRockXY-epsilon)){ //Rock area
     return false;
   }
   return true;
@@ -127,7 +147,7 @@ bool checkRocks(position_ destination){
 
 //Checks if a position is the upper part
 bool checkUpperPart(position_ destination){
-  if(destination.x>(sizeOfFullArena-sizeBadArea-epsilon) && destination.y>(sizeOfFullArena-sizeBadArea-epsilon)){ //Upper ramp area
+  if(destination.x>(sizeOfFullArena-sizeBadAreaUpperX-epsilon) && destination.y>(sizeOfFullArena-sizeBadAreaUpperY-epsilon)){ //Upper ramp area
     return false;
   }
   return true;

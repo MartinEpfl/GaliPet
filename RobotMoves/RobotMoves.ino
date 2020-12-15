@@ -107,6 +107,7 @@ double targetSpeedRight = 0;
 double pwmOutRight = 0;
 PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight,d,15,0.005, DIRECT); 
 
+double valueFromCompass;
 /*
 
 //Pixy camera
@@ -159,6 +160,7 @@ void setup(void)
   rightPID.SetMode(AUTOMATIC);
   rightPID.SetSampleTime(5);
   
+  Serial3.begin(9600); //Compass has a Baud Rate of 9600
 
  // pixy.init(); 
   
@@ -175,6 +177,7 @@ void setup(void)
 
 //////////////////////////////////////////////////////////////    LOOP   //////////////////////////////////////////////////////////////
 
+int acc = 0;
 void loop(void)
 {
 
@@ -202,9 +205,14 @@ void loop(void)
 
 //  pixyRead();
  
-  delay(40); //Needed because otherwise our loop function goes too fast
+  delay(10); //Needed because otherwise our loop function goes too fast
        // advance (speedForward, speedForward);   //move forward in max speed
 
+  acc++;
+  acc = acc % 5;
+  if (acc==0){
+    readValueCompass();
+  }
   
   if(Serial.available()){
     char val = Serial.read();
@@ -292,6 +300,30 @@ void loop(void)
 }
 
 //////////////////////////////////////////////////////////////    OTHER FUNCTIONS   //////////////////////////////////////////////////////////////
+
+void readValueCompass(){
+  char valeurByte[8];
+  int stack =0;
+  boolean readByte = false;
+  boolean value = false;
+  double tempAngleCompass;
+  Serial3.write(0x31); //Asking for the angle, for each command sent you get 8 byte as an answer
+  //First byte, enter => New Line => hundreds of angle => tens of angle => bits of angle => Decimal point of angle => Decimal of angle => Calibrate sum
+  while (!value) {
+    if (Serial3.available()) {
+      valeurByte[stack] = Serial3.read(); //Read the value & stacks it
+      stack = (stack + 1) % 8; //Allows to read the full 8 bytes
+      if (stack == 0) {
+        tempAngleCompass = (valeurByte[2] - 48) * 100 + (valeurByte[3] - 48) * 10 + (valeurByte[4] - 48); //Computes the angle by reading bytes 
+        value = true;
+      }
+    }
+  }
+  valueFromCompass = tempAngleCompass;  
+  
+//        Serial.print("THIS IS THE ANGLE FROM THE COMPASS VALUE : ");
+    Serial.println(valueFromCompass);
+}
 
 
 //--------------------------------------ODOMETRY

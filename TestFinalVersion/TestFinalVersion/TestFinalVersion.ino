@@ -18,12 +18,17 @@ typedef struct {
 
 
 
-const int sizeBadArea = 300; //3 meters for each arena we don't want to go in
+const int sizeBadAreaGrassX = 400;
+const int sizeBadAreaGrassY = 200;
+const int sizeBadAreaRockXY = 300;
+const int sizeBadAreaUpperX = 200;
+const int sizeBadAreaUpperY = 300;
+
 const int sizeOfFullArena = 800; //IF FULL ARENA
 
 const int sizeArenaWidth = 200; //IF SMALL ARENA
 const int sizeArenaHeight = 400; //IF SMALL ARENA
-const double epsilon = 10; //How close you dont want to get close to the area you don't want to go in
+const double epsilon = 20; //How close you dont want to get close to the area you don't want to go in
 const double r = 40; //Radius of circle
 position_ positionOfRobot; //Our robot
 
@@ -255,10 +260,26 @@ void setup() {
 
 
 void loop() {
+  
+    if(Serial.available()){
+    char val = Serial.read();
+    if(val != -1)
+    {
+      switch(val)
+      {
+      case 'x'://Move Forward
+        stop();
+        count = 100;
+        break;
+      }
+    }
+    else stop();
+  }
   if(count<maxIteration && !robotIsHome){
-    if(time_%20==0){
+    if(time_%10==0){
       //Updating the compass value
       readValueCompass();
+      currentAngle = angleCompass;
     }
     //UPDATING THE BACK SENSORS :
     for(int i=0;i<1;i++){
@@ -552,10 +573,8 @@ void readValueCompass(){
       }
     }
   }
-
-  if(tempAngleCompass<360 and tempAngleCompass>=0){
-    angleCompass = 2*PI*(360-tempAngleCompass)/360 + initialDifference;   
-  }
+  angleCompass = 2*PI*(360-tempAngleCompass)/360 + initialDifference;   
+  
         Serial.print("THIS IS THE ANGLE FROM THE COMPASS VALUE : ");
     Serial.println(angleCompass);
     Serial.print("THIS IS THE DIFF FROM THE TWO ANGLES : ");
@@ -608,8 +627,8 @@ void odometry(){
   phi = (distanceRight - distanceLeft)/sizeBetweenWheels;
   positionOfRobot.x = positionOfRobot.x + distanceCenter*cos(currentAngle);
   positionOfRobot.y = positionOfRobot.y + distanceCenter*sin(currentAngle);
-  //currentAngle = angleCompass;
   currentAngle = currentAngle + phi; //New angle for our robot, to calibrate with the compass
+//currentAngle = angleCompass;
 }
 
 double distanceToBackcorners = sqrt(sizeBetweenWheels/2 * sizeBetweenWheels/2 + sizeHeight * sizeHeight); //The distance from the start
@@ -644,9 +663,9 @@ bool checkIfCanGo(position_ destination){
       return false;
     }
     //Uncomment this if u want to check full arena
-   /* if(!checkGrass(corners[i]) ||  !checkRocks(corners[i]) || !checkUpperPart(corners[i]) ){
+    if(!checkGrass(corners[i]) ||  !checkRocks(corners[i]) || !checkUpperPart(corners[i]) ){
       return false;
-    }*/
+    }
   }
   if(!checkWalls(destination)){
     return false;
@@ -656,15 +675,16 @@ bool checkIfCanGo(position_ destination){
 
 //Checks if a position is in a wall
 bool checkWalls(position_ destination){
-  if(destination.x<epsilon || destination.x>(sizeArenaWidth-epsilon) || destination.y<epsilon || destination.y>(sizeArenaHeight-epsilon)){ //Don't get out of the arena
+  if(destination.x<epsilon || destination.x>(sizeOfFullArena-epsilon) || destination.y<epsilon || destination.y>(sizeOfFullArena-epsilon)){ //Don't get out of the arena
     return false;
   }
   return true; //Otherwise it is OK
 }
 
+
 //Check if a position is in the grass area
 bool checkGrass(position_ destination){
-  if(destination.x>(sizeOfFullArena-sizeBadArea-epsilon) && destination.y<(sizeBadArea+epsilon)){ //Grass area
+  if(destination.x>(sizeOfFullArena-sizeBadAreaGrassX-epsilon) && destination.y<(sizeBadAreaGrassY+epsilon)){ //Grass area
     return false;
   }
   return true;
@@ -672,7 +692,7 @@ bool checkGrass(position_ destination){
 
 //Check if a position is in the rock area
 bool checkRocks(position_ destination){
-  if(destination.x<(sizeBadArea+epsilon)  && destination.y>(sizeOfFullArena-sizeBadArea-epsilon)){ //Rock area
+  if(destination.x<(sizeBadAreaRockXY+epsilon)  && destination.y>(sizeOfFullArena-sizeBadAreaRockXY-epsilon)){ //Rock area
     return false;
   }
   return true;
@@ -681,7 +701,7 @@ bool checkRocks(position_ destination){
 
 //Checks if a position is the upper part
 bool checkUpperPart(position_ destination){
-  if(destination.x>(sizeOfFullArena-sizeBadArea-epsilon) && destination.y>(sizeOfFullArena-sizeBadArea-epsilon)){ //Upper ramp area
+  if(destination.x>(sizeOfFullArena-sizeBadAreaUpperX-epsilon) && destination.y>(sizeOfFullArena-sizeBadAreaUpperY-epsilon)){ //Upper ramp area
     return false;
   }
   return true;
