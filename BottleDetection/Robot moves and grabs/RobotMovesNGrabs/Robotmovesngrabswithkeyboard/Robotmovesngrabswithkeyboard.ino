@@ -273,13 +273,13 @@ void loop(void)
 
   delay(10); //Needed because otherwise our loop function goes too fast
   // advance (speedForward, speedForward);   //move forward in max speed
-
+/*
   acc++;
   acc = acc % 5;
   if (acc == 0) {
     readValueCompass();
   }
-
+*/
   if (Serial.available()) {
     char val = Serial.read();
     if (val != -1)
@@ -458,6 +458,14 @@ void odometry() {
   }
 */
 
+void refreshAllPID() {
+  leftPID.Compute();
+  rightPID.Compute();
+  analogWrite(E1, pwmOutLeft);
+  analogWrite(E2, pwmOutRight);
+}
+
+
 void bottleDetection() {
 
   for (int i = 0; i < numberOfSensorsFront; i++) {
@@ -470,6 +478,16 @@ void bottleDetection() {
       if (sensorsFront[0].get_value() > cutOffDistance) { // Noting on left sensor --> T=0 M=0 L=0
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=0 L=0 R=1
           turn_L(speedTurning, speedTurning);
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
           
         }
         else {
@@ -479,6 +497,16 @@ void bottleDetection() {
       else { // Left sensor detects --> T=0 M=0 L=1
         if (sensorsFront[2].get_value() > cutOffDistance) { // Nothing on right sensor --> T=0 M=0 L=1 R=0
           turn_R(speedTurning, speedTurning);
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
           
         }
       }
@@ -487,33 +515,92 @@ void bottleDetection() {
       if (sensorsFront[0].get_value() < cutOffDistance) { // Left sensor detects --> T=0 M=1 L=1
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=1 L=1 R=1
           advance(speedForward, speedForward);
-          delay(500);
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
           stop();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
           arm();
         }
 
         else { // Nothing on right detector --> T=0 M=1 L=1 R=0
           turn_R(0, speedTurning);
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
           
         }
       }
       else { // Nothing on left sensor --> T=0 M=1 L=0
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=1 L=0 R=1
           turn_L(speedTurning, 0);
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
           
         }
         else { // Nothing on Right sensor --> T=0 M=1 L=0 R=0
           advance(speedForward, speedForward);
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
         }
       }
     }
   }
-  else { // Top sensor detects --> T=1
+ /* else { // Top sensor detects --> T=1
     
     stop();
+    delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
+          delay(20);
+          refreshAllPID();
   }
 
-
+*/
 }
 
 
