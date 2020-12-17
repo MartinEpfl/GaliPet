@@ -484,9 +484,9 @@ void bottleDetection() {
 
   if (sensorsFront[3].get_value() > cutOffDistance) { //No obstacle detected --> T=0
     if (sensorsFront[1].get_value() > cutOffDistance) { //Nothing on middle sensor --> T=0 M=0
-      if (sensorsFront[0].get_value() > cutOffDistance) { // Noting on left sensor --> T=0 M=0 L=0
+      if (sensorsFront[0].get_value() > cutOffDistance) { // Nothing on left sensor --> T=0 M=0 L=0
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=0 L=0 R=1
-          turn_L(speedTurning * 0.5, speedTurning * 0.5);
+          advance(speedForward * 0.4, speedForward * 0.6);
           for (int i = 0; i < 20; i++) {
             delay(10);
             refreshAllPID();
@@ -498,7 +498,7 @@ void bottleDetection() {
       }
       else { // Left sensor detects --> T=0 M=0 L=1
         if (sensorsFront[2].get_value() > cutOffDistance) { // Nothing on right sensor --> T=0 M=0 L=1 R=0
-          turn_R(speedTurning * 0.5, speedTurning * 0.5);
+          advance(speedForward * 0.6, speedForward * 0.4);
           for (int i = 0; i < 20; i++) {
             delay(10);
             refreshAllPID();
@@ -520,9 +520,10 @@ void bottleDetection() {
             refreshAllPID();
           }
           arm();
+          advance(speedForward * 0.8, speedForward * 0.8);
         }
         else { // Nothing on right detector --> T=0 M=1 L=1 R=0
-          turn_R(0, speedTurning * 0.5);
+          advance(speedForward * 0.6, speedForward * 0.2);
           for (int i = 0; i < 20; i++) {
             delay(10);
             refreshAllPID();
@@ -531,7 +532,7 @@ void bottleDetection() {
       }
       else { // Nothing on left sensor --> T=0 M=1 L=0
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=1 L=0 R=1
-          turn_L(speedTurning * 0.5, 0);
+          advance(speedForward * 0.2, speedForward * 0.6);
           for (int i = 0; i < 20; i++) {
             delay(10);
             refreshAllPID();
