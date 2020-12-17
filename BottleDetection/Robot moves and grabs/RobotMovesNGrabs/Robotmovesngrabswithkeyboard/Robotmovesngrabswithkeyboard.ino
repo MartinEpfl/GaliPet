@@ -181,7 +181,7 @@ int pinsBack[] = {12, 13}; //Analog Pins for the back sensors
 double thresholdBackSensors = 15; //The value in cm before the robot stops going backward if there is an obstacle at less than this distance.
 
 //Front Sensors
-const int numberOfSensorsFront = 2;
+const int numberOfSensorsFront = 4;
 
 sensor sensorsFront[numberOfSensorsFront];
 int pinsFront[] = {A1, A2, A3, A4}; //The sensors from 0 to 3 are left, middle, right, top according to the robots pov
@@ -259,7 +259,8 @@ void loop(void)
   odometry();
   leftEncoder.write(0); //Resets the accumulators to 0
   rightEncoder.write(0);
-  
+
+  /*
     Serial.print(pwmOutRight);
     Serial.print("  ");
     Serial.print(speedWheelRight);
@@ -267,19 +268,27 @@ void loop(void)
     Serial.print(pwmOutLeft);
     Serial.print("  ");
     Serial.println(speedWheelLeft);
-  
+  */
+  Serial.print(sensorsFront[0].get_value());
+  Serial.print("  ");
+  Serial.print(sensorsFront[1].get_value());
+  Serial.print("  ");
+  Serial.print(sensorsFront[2].get_value());
+  Serial.print("  ");
+  Serial.println(sensorsFront[3].get_value());
+
 
   //  pixyRead();
 
   delay(10); //Needed because otherwise our loop function goes too fast
   // advance (speedForward, speedForward);   //move forward in max speed
-/*
-  acc++;
-  acc = acc % 5;
-  if (acc == 0) {
-    readValueCompass();
-  }
-*/
+  /*
+    acc++;
+    acc = acc % 5;
+    if (acc == 0) {
+      readValueCompass();
+    }
+  */
   if (Serial.available()) {
     char val = Serial.read();
     if (val != -1)
@@ -477,18 +486,11 @@ void bottleDetection() {
     if (sensorsFront[1].get_value() > cutOffDistance) { //Nothing on middle sensor --> T=0 M=0
       if (sensorsFront[0].get_value() > cutOffDistance) { // Noting on left sensor --> T=0 M=0 L=0
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=0 L=0 R=1
-          turn_L(speedTurning, speedTurning);
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          
+          turn_L(speedTurning * 0.5, speedTurning * 0.5);
+          for (int i = 0; i < 20; i++) {
+            delay(10);
+            refreshAllPID();
+          }
         }
         else {
           //Do nothing ==> // Nothing detected --> T=0 M=0 L=0 R=0
@@ -496,111 +498,63 @@ void bottleDetection() {
       }
       else { // Left sensor detects --> T=0 M=0 L=1
         if (sensorsFront[2].get_value() > cutOffDistance) { // Nothing on right sensor --> T=0 M=0 L=1 R=0
-          turn_R(speedTurning, speedTurning);
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          
+          turn_R(speedTurning * 0.5, speedTurning * 0.5);
+          for (int i = 0; i < 20; i++) {
+            delay(10);
+            refreshAllPID();
+          }
         }
       }
     }
     else { //Middle sensor detects --> T=0 M=1
       if (sensorsFront[0].get_value() < cutOffDistance) { // Left sensor detects --> T=0 M=1 L=1
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=1 L=1 R=1
-          advance(speedForward, speedForward);
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
+          advance(speedForward * 0.5, speedForward * 0.5);
+          for (int i = 0; i < 20; i++) {
+            delay(10);
+            refreshAllPID();
+          }
           stop();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
+          for (int i = 0; i < 20; i++) {
+            delay(10);
+            refreshAllPID();
+          }
           arm();
         }
-
         else { // Nothing on right detector --> T=0 M=1 L=1 R=0
-          turn_R(0, speedTurning);
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          
+          turn_R(0, speedTurning * 0.5);
+          for (int i = 0; i < 20; i++) {
+            delay(10);
+            refreshAllPID();
+          }
         }
       }
       else { // Nothing on left sensor --> T=0 M=1 L=0
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=1 L=0 R=1
-          turn_L(speedTurning, 0);
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          
+          turn_L(speedTurning * 0.5, 0);
+          for (int i = 0; i < 20; i++) {
+            delay(10);
+            refreshAllPID();
+          }
         }
         else { // Nothing on Right sensor --> T=0 M=1 L=0 R=0
-          advance(speedForward, speedForward);
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
+          advance(speedForward * 0.5, speedForward * 0.5);
+          for (int i = 0; i < 20; i++) {
+            delay(10);
+            refreshAllPID();
+          }
         }
       }
     }
   }
- /* else { // Top sensor detects --> T=1
-    
-    stop();
-    delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-          delay(20);
-          refreshAllPID();
-  }
+  else { // Top sensor detects --> T=1
 
-*/
+    stop();
+    for (int i = 0; i < 20; i++) {
+      delay(10);
+      refreshAllPID();
+    }
+  }
 }
 
 
