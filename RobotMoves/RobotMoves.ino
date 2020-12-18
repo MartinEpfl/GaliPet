@@ -211,7 +211,8 @@ void loop(void)
   acc++;
   acc = acc % 5;
   if (acc==0){
-    readValueCompass();
+    
+   readValueCompass();
   }
   
   if(Serial.available()){
@@ -257,6 +258,8 @@ void loop(void)
       
       case 'x':
         stop();
+        break;
+      case 'q':
         break;
       case '+': 
         leftPID.SetTunings(leftPID.GetKp()+0.5, leftPID.GetKi(),leftPID.GetKd()); 
@@ -310,6 +313,7 @@ void readValueCompass(){
   Serial3.write(0x31); //Asking for the angle, for each command sent you get 8 byte as an answer
   //First byte, enter => New Line => hundreds of angle => tens of angle => bits of angle => Decimal point of angle => Decimal of angle => Calibrate sum
   while (!value) {
+
     if (Serial3.available()) {
       valeurByte[stack] = Serial3.read(); //Read the value & stacks it
       stack = (stack + 1) % 8; //Allows to read the full 8 bytes

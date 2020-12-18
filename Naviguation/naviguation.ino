@@ -18,7 +18,7 @@ const int sizeBadAreaUpperY = 300;
 
 const int sizeBadArea = 300; //3 meters for each arena we don't want to go in
 const int sizeOfFullArena = 800;
-const double epsilon = 10; //How close you dont want to get close to the area you don't want to go in
+double epsilon = 10; //How close you dont want to get close to the area you don't want to go in
 const double r = 40; //Radius of circle
 
 position_ leftRight[2];
@@ -56,7 +56,7 @@ const int optimalSpeedWheelTurn = (sizeBetweenWheels) * (PI/2);
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(19200);
-  randomSeed(3543);
+  randomSeed(21);
   positionOfRobot.x = 50;
   positionOfRobot.y = 50;
 }
@@ -204,6 +204,10 @@ void dodgingObstacle(double distanceToObstacle){
 }
 void loop() {
   if(count<maxIteration){
+    if(time_==0){
+      epsilon+=0.5;
+      
+    }
     goingHome = count>maxIteration*ratioBeforeGoingHome;
 //    Serial.print("Diff on X : ");
    // Serial.print(possibilities[indexPosibility].x - positionOfRobot.x);
