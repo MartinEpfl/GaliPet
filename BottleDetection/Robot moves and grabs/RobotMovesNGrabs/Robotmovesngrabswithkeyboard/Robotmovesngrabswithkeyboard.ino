@@ -186,6 +186,7 @@ const int numberOfSensorsFront = 4;
 sensor sensorsFront[numberOfSensorsFront];
 int pinsFront[] = {A1, A2, A3, A4}; //The sensors from 0 to 3 are left, middle, right, top according to the robots pov
 int cutOffDistance = 200; //Value used to check if there is something in front of the sensor (in a binary way)
+int veryCloseDistance = 20; //Value used to check if something is very close to the IR sensors
 
 //////////////////////////////////////////////////////////////    SETUP   //////////////////////////////////////////////////////////////
 
@@ -486,11 +487,21 @@ void bottleDetection() {
     if (sensorsFront[1].get_value() > cutOffDistance) { //Nothing on middle sensor --> T=0 M=0
       if (sensorsFront[0].get_value() > cutOffDistance) { // Nothing on left sensor --> T=0 M=0 L=0
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=0 L=0 R=1
-          advance(speedForward * 0.4, speedForward * 0.6);
-          for (int i = 0; i < 20; i++) {
-            delay(10);
-            refreshAllPID();
+          if (sensorsFront[2].get_value() < veryCloseDistance) { // Right sensor detects --> T=0 M=0 L=0 R=1 but it's closer than focal point
+            advance(speedForward * 0.6, speedForward * 0.2); //Turns right fast
+            for (int i = 0; i < 15; i++) {
+              delay(10);
+              refreshAllPID();
+            }
           }
+          else {
+            advance(speedForward * 0.4, speedForward * 0.6); //Turns left slowly
+            for (int i = 0; i < 15; i++) {
+              delay(10);
+              refreshAllPID();
+            }
+          }
+
         }
         else {
           //Do nothing ==> // Nothing detected --> T=0 M=0 L=0 R=0
@@ -498,49 +509,79 @@ void bottleDetection() {
       }
       else { // Left sensor detects --> T=0 M=0 L=1
         if (sensorsFront[2].get_value() > cutOffDistance) { // Nothing on right sensor --> T=0 M=0 L=1 R=0
-          advance(speedForward * 0.6, speedForward * 0.4);
-          for (int i = 0; i < 20; i++) {
-            delay(10);
-            refreshAllPID();
+          if (sensorsFront[0].get_value() < veryCloseDistance) { // Only left sensor detects --> T=0 M=0 L=1 R=0 but it's closer than focal point
+            advance(speedForward * 0.2, speedForward * 0.6); //Turns left fast
+            for (int i = 0; i < 15; i++) {
+              delay(10);
+              refreshAllPID();
+            }
           }
+          else {
+            advance(speedForward * 0.6, speedForward * 0.4); //Turns right slowly
+            for (int i = 0; i < 15; i++) {
+              delay(10);
+              refreshAllPID();
+            }
+          }
+
         }
       }
     }
     else { //Middle sensor detects --> T=0 M=1
       if (sensorsFront[0].get_value() < cutOffDistance) { // Left sensor detects --> T=0 M=1 L=1
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=1 L=1 R=1
-          advance(speedForward * 0.5, speedForward * 0.5);
-          for (int i = 0; i < 20; i++) {
+          advance(speedForward * 0.5, speedForward * 0.5); //Goes forward for a bit
+          for (int i = 0; i < 15; i++) {
             delay(10);
             refreshAllPID();
           }
+          delay(1000);
           stop();
-          for (int i = 0; i < 20; i++) {
+          for (int i = 0; i < 15; i++) {
             delay(10);
             refreshAllPID();
           }
-          arm();
+          arm();                                          //Grabs bottle
           advance(speedForward * 0.8, speedForward * 0.8);
         }
         else { // Nothing on right detector --> T=0 M=1 L=1 R=0
-          advance(speedForward * 0.6, speedForward * 0.2);
-          for (int i = 0; i < 20; i++) {
-            delay(10);
-            refreshAllPID();
+          if (sensorsFront[0].get_value() < veryCloseDistance) { // Left sensor detects --> T=0 M=1 L=1 R=0 but it's closer than focal point
+            advance(speedForward * 0.2, speedForward * 0.6); //Turns left fast
+            for (int i = 0; i < 15; i++) {
+              delay(10);
+              refreshAllPID();
+            }
           }
+          else {
+            advance(speedForward * 0.6, speedForward * 0.2); //Turns right fast
+            for (int i = 0; i < 15; i++) {
+              delay(10);
+              refreshAllPID();
+            }
+          }
+
         }
       }
       else { // Nothing on left sensor --> T=0 M=1 L=0
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=1 L=0 R=1
-          advance(speedForward * 0.2, speedForward * 0.6);
-          for (int i = 0; i < 20; i++) {
-            delay(10);
-            refreshAllPID();
+          if (sensorsFront[2].get_value() < veryCloseDistance) { // Right sensor detects --> T=0 M=1 L=0 R=1 but it's closer than focal point
+            advance(speedForward * 0.6, speedForward * 0.2); //Turns right fast
+            for (int i = 0; i < 15; i++) {
+              delay(10);
+              refreshAllPID();
+            }
+          }
+          else {
+            advance(speedForward * 0.2, speedForward * 0.6); //Turns left fast
+            for (int i = 0; i < 15; i++) {
+              delay(10);
+              refreshAllPID();
+            }
           }
         }
         else { // Nothing on Right sensor --> T=0 M=1 L=0 R=0
-          advance(speedForward * 0.5, speedForward * 0.5);
-          for (int i = 0; i < 20; i++) {
+          advance(speedForward * 0.5, speedForward * 0.5); //Goes forward
+          for (int i = 0; i < 15; i++) {
             delay(10);
             refreshAllPID();
           }
@@ -551,7 +592,7 @@ void bottleDetection() {
   else { // Top sensor detects --> T=1
 
     stop();
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 15; i++) {
       delay(10);
       refreshAllPID();
     }
