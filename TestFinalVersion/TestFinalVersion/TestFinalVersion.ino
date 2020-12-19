@@ -40,8 +40,8 @@ const double angles[3] = {PI / 4, 0, -PI / 4,};
 
 
 bool destinationAvailable = false; //If there is somewhere to go
-boolean travellingToADestination = false; //If it is going somewhere
-int indexPosibility;
+boolean travellingToADestination = true; //If it is going somewhere
+int indexPosibility = 1;
 int count = 0;
 const int maxIteration = 200;
 bool robotIsHome = false;
@@ -232,7 +232,7 @@ void setup() {
   Serial2.begin(9600); //Compass has a Baud Rate of 9600
   randomSeed(analogRead(13));
 
-  readValueCompass();
+//  readValueCompass();
   initialDifference = currentAngle - angleCompass ;
   pinMode(E1, OUTPUT);
   pinMode(M1, OUTPUT);
@@ -296,8 +296,8 @@ void loop() {
     else stop();
   }
   if (count < maxIteration && !robotIsHome) {
-    Serial.print("This is COUNT :");
-    Serial.println(count);
+  //  Serial.print("This is COUNT :");
+   // Serial.println(count);
     if (time_ == 0) {
       epsilon += 0.2;
 
@@ -312,8 +312,8 @@ void loop() {
     previousTime = currentTime;
     currentTime = millis();
     diffTime = currentTime - previousTime;
-    Serial.print("THIS IS DIFF TIME : ");
-    Serial.println(diffTime);
+  //  Serial.print("THIS IS DIFF TIME : ");
+   // Serial.println(diffTime);
     //  delay(50);
     timeBeforeDelay = millis();
     //Serial.print("THIS IS MINUS : ");
@@ -333,30 +333,34 @@ void loop() {
     Serial.print(currentAngle);
     Serial.print(" VS ");
     Serial.println(angleCompass);*/
-
+/*
     Serial.print("Position du robot : (");
     Serial.print(positionOfRobot.x);
     Serial.print(";");
     Serial.print(positionOfRobot.y);
-    Serial.println(")");
-    /*
-      if(!isCurrentlydodgingObstacle){
-      bottleDetection();
-      }*/
+    Serial.println(")");*/
 
-    /*
-      if (obstacleInFront() && !isCurrentlydodgingObstacle && !goingToGetBottle) {
+    if (!isCurrentlydodgingObstacle) {
+      bottleDetection();
+    }
+    if(goingToGetBottle){
+      Serial.println("JE CHERCHE LA BOUTEILLE MIAM MIAM LA BOUTEILLE");
+    }
+
+   /* if (obstacleInFront() && !isCurrentlydodgingObstacle && !goingToGetBottle) {
       time_ = 0;
       isCurrentlydodgingObstacle  = true;
       goingBack = false;
       wasGoingBack = false;
       dodgingObstacle(sensorsObstacle[0].get_value());
-      }*/
+    }*/
     if (!travellingToADestination && !goingToGetBottle) {
+      Serial.println("JE CHOISIS UNE NOUVELLE DESTINATION");
       pickingADestination();
     }
 
     else if (travellingToADestination && !goingToGetBottle) {
+      Serial.println("JE VAIS VERS LA DESTINATION");
       goingToALocation();
     }
   }
@@ -564,7 +568,9 @@ void bottleDetection() {
     wasGoingBack = false;
     Serial.print("JE REPERE UN TRUC GENRE UN OBSTACLE A CETTE DISTANCE : ");
     Serial.println(sensorsFront[3].get_value());
+    odometry();
     dodgingObstacle(sensorsFront[3].get_value());
+    odometry();
     for (int i = 0; i < 15; i++) {
       delay(10);
       refreshAllPID();
@@ -833,10 +839,10 @@ void odometry() {
   positionOfRobot.y = positionOfRobot.y + distanceCenter * sin(currentAngle);
   if (count % 10 == 0 and time_ == 0) {
     //Updating the compass value
-   // stop();
-    readValueCompass();
-    currentAngle = angleCompass;
-   // currentAngle = currentAngle + phi; 
+    // stop();
+    // readValueCompass();
+ //   currentAngle = angleCompass;
+    // currentAngle = currentAngle + phi;
   }
   else {
     currentAngle = currentAngle + phi; //New angle for our robot, to calibrate with the compass

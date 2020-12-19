@@ -7,7 +7,7 @@
 
 
 
-const int window_size = 20;
+const int window_size = 5;
 
 struct sensor{ 
   double read_value = 0;
@@ -51,6 +51,20 @@ sensor sensorsBack[numberOfSensorsBack];
 
 int pinsBack[] = {12,13};
 
+const int numberOfSensorObstacle = 1;
+
+
+sensor sensorsObstacle[numberOfSensorObstacle];
+
+
+
+const int numberOfSensorsFront = 4;
+
+sensor sensorsFront[numberOfSensorsFront];
+int pinsFront[] = {A1, A2, A3, A4}; //The sensors from 0 to 3 are left, middle, right, top according to the robots pov
+int cutOffDistance = 200; //Value used to check if there is something in front of the sensor (in a binary way)
+int veryCloseDistance = 20; //Value used to check if something is very close to the IR sensors
+
 
 
 void setup() {
@@ -58,15 +72,30 @@ void setup() {
   for(int i=0; i<numberOfSensorsBack;i++){
     sensorsBack[i].sensorInit(pinsBack[i], 30);
   }
+
+  for (int i = 0; i < numberOfSensorsFront; i++) {
+    sensorsFront[i].sensorInit(pinsFront[i], 80);
+  }
+
 }
 
 void loop() {
   for(int i=0;i<1;i++){
     sensorsBack[i].loop_sensor();
-    Serial.print("Value of sensor ");
-    Serial.print(i);
-    Serial.print(" is ");
-    Serial.println(sensorsBack[i].get_value());
+
     delay(10);
   }
+  for (int i = 0; i < numberOfSensorsFront; i++) {
+    sensorsFront[i].loop_sensor();
+  }
+
+    Serial.print(sensorsFront[0].get_value());
+  Serial.print("  ");
+  Serial.print(sensorsFront[1].get_value());
+  Serial.print("  ");
+  Serial.print(sensorsFront[2].get_value());
+  Serial.print("  ");
+  Serial.println(sensorsFront[3].get_value());
+
+    
 }
