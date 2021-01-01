@@ -167,8 +167,8 @@ int downspeed = 1;
 int setspeed = 10;
 int waitingOnBottleTime = 1000; //Time waited on the bottle
 int intermediatePosition = 1000;
-
-
+int numberOfBottles = 0;
+const int numberMaxOfBottle = 0;
 ///////Servo of the back/////////
 Servo servoBack;
 int pinServoBack = 9; //Pin of servo for the back (PWM)
@@ -212,7 +212,8 @@ unsigned long currentTime = millis();
 unsigned long diffTime = currentTime - previousTime;
 unsigned long timeBeforeDelay = millis();
 unsigned long timeAfterDelay = millis();
-
+unsigned long timeSinceBegin;
+double timeBeforeGoingHome = 2 * 60 * 1000; //In milliseconds
 
 //PID for motor control
 
@@ -227,12 +228,13 @@ double pwmOutRight = 0;
 PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight, 5.1, 0.5, 0.005, DIRECT);
 
 void setup() {
+  timeSinceBegin = millis();
   // put your setup code here, to run once:
   Serial.begin(19200);      //Set Baud Rate
   Serial2.begin(9600); //Compass has a Baud Rate of 9600
   randomSeed(analogRead(13));
 
-//  readValueCompass();
+  //  readValueCompass();
   initialDifference = currentAngle - angleCompass ;
   pinMode(E1, OUTPUT);
   pinMode(M1, OUTPUT);
@@ -241,7 +243,6 @@ void setup() {
   positionOfRobot.x = 50;
   positionOfRobot.y = 50;
   //setting up servos
-  servoArm.attach(pinservoArm);
   servoBack.attach(pinServoBack);
   positionOfArm = servoArm.read();
   Serial.println("Reseting the arm...");
@@ -280,7 +281,7 @@ double compassArray[5];
 
 
 void loop() {
-
+  timeSinceBegin = millis();
   if (Serial.available()) {
     char val = Serial.read();
     if (val != -1)
@@ -296,8 +297,8 @@ void loop() {
     else stop();
   }
   if (count < maxIteration && !robotIsHome) {
-  //  Serial.print("This is COUNT :");
-   // Serial.println(count);
+    //  Serial.print("This is COUNT :");
+    // Serial.println(count);
     if (time_ == 0) {
       epsilon += 0.2;
 
@@ -312,8 +313,8 @@ void loop() {
     previousTime = currentTime;
     currentTime = millis();
     diffTime = currentTime - previousTime;
-  //  Serial.print("THIS IS DIFF TIME : ");
-   // Serial.println(diffTime);
+    //  Serial.print("THIS IS DIFF TIME : ");
+    // Serial.println(diffTime);
     //  delay(50);
     timeBeforeDelay = millis();
     //Serial.print("THIS IS MINUS : ");
@@ -328,32 +329,33 @@ void loop() {
     odometry();
 
 
-    goingHome = count > maxIteration * ratioBeforeGoingHome;
+    goingHome = (timeSinceBegin > timeBeforeGoingHome) || (numberOfBottles>=numberMaxOfBottle);
+    
     refreshAllPID(); /*
     Serial.print(currentAngle);
     Serial.print(" VS ");
     Serial.println(angleCompass);*/
-/*
-    Serial.print("Position du robot : (");
-    Serial.print(positionOfRobot.x);
-    Serial.print(";");
-    Serial.print(positionOfRobot.y);
-    Serial.println(")");*/
+    /*
+        Serial.print("Position du robot : (");
+        Serial.print(positionOfRobot.x);
+        Serial.print(";");
+        Serial.print(positionOfRobot.y);
+        Serial.println(")");*/
 
-    if (!isCurrentlydodgingObstacle) {
+    if (!isCurrentlydodgingObstacle && !goingHome) {
       bottleDetection();
     }
-    if(goingToGetBottle){
+    if (goingToGetBottle) {
       Serial.println("JE CHERCHE LA BOUTEILLE MIAM MIAM LA BOUTEILLE");
     }
 
-   /* if (obstacleInFront() && !isCurrentlydodgingObstacle && !goingToGetBottle) {
+    if (obstacleInFront() && !isCurrentlydodgingObstacle && !goingToGetBottle) {
       time_ = 0;
       isCurrentlydodgingObstacle  = true;
       goingBack = false;
       wasGoingBack = false;
       dodgingObstacle(sensorsObstacle[0].get_value());
-    }*/
+    }
     if (!travellingToADestination && !goingToGetBottle) {
       Serial.println("JE CHOISIS UNE NOUVELLE DESTINATION");
       pickingADestination();
@@ -366,33 +368,16 @@ void loop() {
   }
   if (count == maxIteration || robotIsHome ) {
 
-    Serial.println("DONE!");
-    Serial.print("x = [");
-    for (int i = 0; i < 4 * (maxIteration - 1); i++) {
-      Serial.print(valueX[i]);
-      Serial.print(",");
-    }
-    Serial.print(valueX[4 * maxIteration - 3]);
-    Serial.print(",");
-    Serial.print(valueX[4 * maxIteration - 2]);
-    Serial.print(",");
-    Serial.print(valueX[4 * maxIteration - 1]);
-    Serial.println("]");
-    Serial.print("y = [");
-    for (int i = 0; i < 4 * (maxIteration - 1); i++) {
-      Serial.print(valueY[i]);
-      Serial.print(",");
-    }
-    Serial.print(valueY[4 * maxIteration - 3]);
-    Serial.print(",");
-    Serial.print(valueY[4 * maxIteration - 2]);
-    Serial.print(",");
-    Serial.print(valueY[4 * maxIteration - 1]);
-    Serial.println("]");
+    for (int i = 0; i < time_dodge * 2 ; i++) {
+      odometry();
+      dodge_R(optimalSpeedTurn, optimalSpeedTurn);
+      refreshAllPID();
+      delay(30);
+    } 
     count = maxIteration + 2;
     robotIsHome = false;
     stop();
-
+    back(); 
   }
 
 
@@ -841,7 +826,7 @@ void odometry() {
     //Updating the compass value
     // stop();
     // readValueCompass();
- //   currentAngle = angleCompass;
+    //   currentAngle = angleCompass;
     // currentAngle = currentAngle + phi;
   }
   else {
@@ -960,7 +945,9 @@ int fromProbaToIndex(int first, int second, int third, int randomNumber) {
 
 //The arm is going down
 void arm() {
+  numberOfBottles++;
   stop();
+  servoArm.attach(pinservoArm);
   Serial.println("Arm Turning...");
   for (int position = uplim; position < lowlim; position++) {
     servoArm.writeMicroseconds(position);
@@ -975,7 +962,7 @@ void arm() {
     servoArm.writeMicroseconds(position);
     delay(upspeedSecondPart);
   }
-
+  servoArm.detach();
   Serial.println("-DONE TURNING-");
 }
 

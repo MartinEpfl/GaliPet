@@ -5,7 +5,7 @@
 #include <Servo.h>
 //#include <Pixy2UART.h>
 
-//Commandes : 
+//Commandes :
 //w => Avancer
 //s => Reculer
 //a => Gauche
@@ -23,10 +23,10 @@ Servo servoArm;
 int pinservoArm =  8; //Pin of servo for the ARM (PWM)
 int positionOfArm;
 int uplim = 500; //Position when the arm is at the top
-int lowlim =2700; //Position when the arm is at the bottom
+int lowlim = 2700; //Position when the arm is at the bottom
 int upspeedFirstPart = 3;
 int upspeedSecondPart = 3;
-int downspeed =1;
+int downspeed = 1;
 int setspeed = 10;
 int waitingOnBottleTime = 1000; //Time waited on the bottle
 int intermediatePosition = 1000;
@@ -48,18 +48,18 @@ int M2 = 29; //M2 Direction control (Digital)
 int speedBackward = 50; //Speed moving backward cm/s
 int speedTurning = 30; //Speed while turning cm/s
 
-const int r=30;
+const int r = 30;
 const double sizeBetweenWheels = 38.3;
- double speedForward = r;//(r-sizeBetweenWheels/2)*(PI/4);
-const int optimalSpeedUpper = (r+sizeBetweenWheels/2)*(PI/4);
-const int optimalSpeedLower = (r-sizeBetweenWheels/2)*(PI/4);
+double speedForward = r;//(r-sizeBetweenWheels/2)*(PI/4);
+const int optimalSpeedUpper = (r + sizeBetweenWheels / 2) * (PI / 4);
+const int optimalSpeedLower = (r - sizeBetweenWheels / 2) * (PI / 4);
 
 
 
 double diameterWheels = 12; //cm
 double gearRatio = 74.83; //gear ratio of our pololu;
 double countsPerRevolution = 48;
-const double factorPulseToDistance = PI*diameterWheels/(countsPerRevolution*gearRatio);
+const double factorPulseToDistance = PI * diameterWheels / (countsPerRevolution*gearRatio);
 
 //Motors Encodeurs
 
@@ -69,14 +69,14 @@ const byte leftEncoder0pinA =  3;//Pin for left motor Encodeur  (must be a pin t
 const byte leftEncoder0pinB = 4;//Second pin
 double durationLeft = 0;
 double speedWheelLeft = 0;
-Encoder leftEncoder(leftEncoder0pinA,leftEncoder0pinB);
+Encoder leftEncoder(leftEncoder0pinA, leftEncoder0pinB);
 
 //Right wheel
 const byte rightEncoder0pinA =  2;//first Pin for right motor Encodeur (must be a pin to use interrupt)
 const byte rightEncoder0pinB = 5;//Second pin
 double durationRight = 0;
 double speedWheelRight = 0;
-Encoder rightEncoder(rightEncoder0pinA,rightEncoder0pinB);
+Encoder rightEncoder(rightEncoder0pinA, rightEncoder0pinB);
 
 //Time between each loop
 unsigned long previousTime = millis();
@@ -86,12 +86,12 @@ unsigned long diffTime = currentTime - previousTime;
 //Robot position (odometry)
 double x = 0; //Initialize position
 double y = 0;
-double angle = PI/2; //Initial Angle (delta)
+double angle = PI / 2; //Initial Angle (delta)
 double phi = 0;
 double distanceLeft = speedWheelLeft * diffTime; //Distance travelled by the left wheel
 double distanceRight = speedWheelRight * diffTime;
-double distanceCenter = (distanceLeft + distanceRight)/2; //By the center of the robot (between the two wheels)
-double distanceSinceBeginning=0;
+double distanceCenter = (distanceLeft + distanceRight) / 2; //By the center of the robot (between the two wheels)
+double distanceSinceBeginning = 0;
 //double sizeBetweenWheels = 38.3; //Distance between the two wheels (TODO => CHANGE)
 
 
@@ -100,32 +100,32 @@ double d = 2;
 //For the left motor
 double targetSpeedLeft = 0; //
 double pwmOutLeft = 0;
-PID leftPID(&speedWheelLeft, &pwmOutLeft, &targetSpeedLeft,d,15,0.005, DIRECT); 
+PID leftPID(&speedWheelLeft, &pwmOutLeft, &targetSpeedLeft, d, 15, 0.005, DIRECT);
 
 //For the right motor
 double targetSpeedRight = 0;
 double pwmOutRight = 0;
-PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight,d,15,0.005, DIRECT); 
+PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight, d, 15, 0.005, DIRECT);
 
 double valueFromCompass;
 /*
 
-//Pixy camera
-Pixy2UART pixy;
-float focalLengthHeight = 232.50; //Maybe we need to be more precise
-float focalLengthWidth = 267.15;
-int pixelsWidth;   //read by the camera
-int pixelsHeight; //read by the camera
-float distanceWidth;   //calculated distance based on the width of the object
-float distanceHeight;  //calculated distance based on the height of the object 
-float averageDistance; //Average of both distances
-float widthOfObject = 13.7; //cm  Real size in cm of the object
-float heightOfObject = 4; //cm 
-const int sizeOfArray = 20;
-double distancesAverage[sizeOfArray];
-double tempDistanceAverage[sizeOfArray];
-double value; //Actual value
-//float distance_ = 30; To use if we want to calibrate the focal length
+  //Pixy camera
+  Pixy2UART pixy;
+  float focalLengthHeight = 232.50; //Maybe we need to be more precise
+  float focalLengthWidth = 267.15;
+  int pixelsWidth;   //read by the camera
+  int pixelsHeight; //read by the camera
+  float distanceWidth;   //calculated distance based on the width of the object
+  float distanceHeight;  //calculated distance based on the height of the object
+  float averageDistance; //Average of both distances
+  float widthOfObject = 13.7; //cm  Real size in cm of the object
+  float heightOfObject = 4; //cm
+  const int sizeOfArray = 20;
+  double distancesAverage[sizeOfArray];
+  double tempDistanceAverage[sizeOfArray];
+  double value; //Actual value
+  //float distance_ = 30; To use if we want to calibrate the focal length
 
 */
 
@@ -142,16 +142,16 @@ void setup(void)
   //setting up servos
   servoArm.attach(pinservoArm);
   servoBack.attach(pinServoBack);
-  positionOfArm = servoArm.read(); 
+  positionOfArm = servoArm.read();
   Serial.println("Reseting the arm...");
   servoArm.writeMicroseconds(500);
   Serial.println("DONE");
-  positionOfBack = servoBack.read(); 
+  positionOfBack = servoBack.read();
   Serial.println("Reseting the back...");
   servoBack.write(uplim_b);
   Serial.println("DONE");
 
-  
+
   // PIDs on
   leftPID.SetOutputLimits(0, 255);
   leftPID.SetMode(AUTOMATIC);
@@ -159,11 +159,11 @@ void setup(void)
   rightPID.SetOutputLimits(0, 255);
   rightPID.SetMode(AUTOMATIC);
   rightPID.SetSampleTime(5);
-  
+
   Serial2.begin(9600); //Compass has a Baud Rate of 9600
 
- // pixy.init(); 
-  
+  // pixy.init();
+
   Serial.println("Controls :");
   Serial.println("w to advance.");
   Serial.println("s to back off.");
@@ -181,106 +181,107 @@ int acc = 0;
 void loop(void)
 {
 
-  
+
   previousTime = currentTime;
   currentTime = millis();
   diffTime = currentTime - previousTime;
-  
+
   durationLeft = abs(leftEncoder.read()); //Reads the left accumulated encodeur
   durationRight = abs(rightEncoder.read()); //Reads the value accumulated on the right encodeur
-  speedWheelLeft = 1000*factorPulseToDistance*durationLeft/diffTime; //  cm/s
-  speedWheelRight = 1000*factorPulseToDistance*durationRight/diffTime;//  cm/s
+  speedWheelLeft = 1000 * factorPulseToDistance * durationLeft / diffTime; //  cm/s
+  speedWheelRight = 1000 * factorPulseToDistance * durationRight / diffTime; //  cm/s
   odometry();
   leftEncoder.write(0); //Resets the accumulators to 0
   rightEncoder.write(0);
   /*
-  Serial.print(pwmOutRight);
-  Serial.print("  ");
-  Serial.print(speedWheelRight);
-  Serial.print("  ");
-  Serial.print(pwmOutLeft);
-  Serial.print("  ");
-  Serial.println(speedWheelLeft);
-    */
+    Serial.print(pwmOutRight);
+    Serial.print("  ");
+    Serial.print(speedWheelRight);
+    Serial.print("  ");
+    Serial.print(pwmOutLeft);
+    Serial.print("  ");
+    Serial.println(speedWheelLeft);
+  */
 
-//  pixyRead();
- 
+  //  pixyRead();
+
   delay(10); //Needed because otherwise our loop function goes too fast
-       // advance (speedForward, speedForward);   //move forward in max speed
+  // advance (speedForward, speedForward);   //move forward in max speed
 
   acc++;
   acc = acc % 5;
-  if (acc==0){
-    
-   readValueCompass();
-  }
-  
-  if(Serial.available()){
-    char val = Serial.read();
-    if(val != -1)
-    {
-      switch(val)
-      {
-      case 'w'://Move Forward
-        Serial.println("Move forward");
-        advance (speedForward, speedForward);   //move forward in max speed
-        break;
-      case 's'://Move Backward
-        Serial.println("Move backward");
-        back_off (speedBackward, speedForward);   //move back in max speed
-        break;
-      case 'a'://Turn Left
-        turn_L (optimalSpeedLower, optimalSpeedUpper);
-        break;
-      case 'd'://Turn Right
-        turn_R (optimalSpeedUpper, optimalSpeedLower);
-        break;
-      case 'l'://Arm goes down
-        arm();
-        break;
-      case 'b'://Back Opens Up
-        back();
-        break;
-      case 'p':
-        speedForward+=10;
+  if (acc == 0) {
 
-        Serial.println("Speed : ");
-        Serial.println(speedForward);
-        advance (speedForward, speedForward);
-        break;
-      case 'o':
-        speedForward-=10;
-        
-        Serial.println("Speed : ");
-        Serial.println(speedForward);
-        advance (speedForward, speedForward);
-        break;
-      
-      case 'x':
-        stop();
-        break;
-      case 'q':
-        break;
-      case '+': 
-        leftPID.SetTunings(leftPID.GetKp()+0.5, leftPID.GetKi(),leftPID.GetKd()); 
-        Serial.print("leftPID P value is now : "); 
-        Serial.println(leftPID.GetKp()); 
-        break;      
-      case '-': 
-        leftPID.SetTunings(leftPID.GetKp()-0.5, leftPID.GetKi(),leftPID.GetKd()); 
-        Serial.print("leftPID P value is now : "); 
-        Serial.println(leftPID.GetKp()); 
-        break; 
-      case '6': 
-        leftPID.SetTunings(leftPID.GetKp(), leftPID.GetKi(),leftPID.GetKd()+0.001); 
-        Serial.print("leftPID D value is now : "); 
-        Serial.println(leftPID.GetKd()); 
-        break; 
-      case '9': 
-        leftPID.SetTunings(leftPID.GetKp(), leftPID.GetKi(),leftPID.GetKd()-0.001); 
-        Serial.print("leftPID D value is now : "); 
-        Serial.println(leftPID.GetKd());  
-        break; 
+    //readValueCompass();
+  }
+
+  if (Serial.available()) {
+    char val = Serial.read();
+    if (val != -1)
+    {
+      switch (val)
+      {
+        case 'w'://Move Forward
+          Serial.println("Move forward");
+          advance (speedForward, speedForward);   //move forward in max speed
+          break;
+        case 's'://Move Backward
+          Serial.println("Move backward");
+          back_off (speedBackward, speedForward);   //move back in max speed
+          break;
+        case 'a'://Turn Left
+          turn_L (optimalSpeedLower, optimalSpeedUpper);
+          break;
+        case 'd'://Turn Right
+          turn_R (optimalSpeedUpper, optimalSpeedLower);
+          break;
+        case 'l'://Arm goes down
+          arm();
+          break;
+        case 'b'://Back Opens Up
+          back();
+          break;
+        case 'p':
+          speedForward += 10;
+
+          Serial.println("Speed : ");
+          Serial.println(speedForward);
+          advance (speedForward, speedForward);
+          break;
+        case 'o':
+          speedForward -= 10;
+
+          Serial.println("Speed : ");
+          Serial.println(speedForward);
+          advance (speedForward, speedForward);
+          break;
+
+        case 'x':
+          stop();
+          break;
+        case 'q':
+          readValueCompass();
+          break;
+        case '+':
+          leftPID.SetTunings(leftPID.GetKp() + 0.5, leftPID.GetKi(), leftPID.GetKd());
+          Serial.print("leftPID P value is now : ");
+          Serial.println(leftPID.GetKp());
+          break;
+        case '-':
+          leftPID.SetTunings(leftPID.GetKp() - 0.5, leftPID.GetKi(), leftPID.GetKd());
+          Serial.print("leftPID P value is now : ");
+          Serial.println(leftPID.GetKp());
+          break;
+        case '6':
+          leftPID.SetTunings(leftPID.GetKp(), leftPID.GetKi(), leftPID.GetKd() + 0.001);
+          Serial.print("leftPID D value is now : ");
+          Serial.println(leftPID.GetKd());
+          break;
+        case '9':
+          leftPID.SetTunings(leftPID.GetKp(), leftPID.GetKi(), leftPID.GetKd() - 0.001);
+          Serial.print("leftPID D value is now : ");
+          Serial.println(leftPID.GetKd());
+          break;
       }
     }
     else stop();
@@ -304,9 +305,9 @@ void loop(void)
 
 //////////////////////////////////////////////////////////////    OTHER FUNCTIONS   //////////////////////////////////////////////////////////////
 
-void readValueCompass(){
+void readValueCompass() {
   char valeurByte[8];
-  int stack =0;
+  int stack = 0;
   boolean readByte = false;
   boolean value = false;
   double tempAngleCompass;
@@ -318,56 +319,56 @@ void readValueCompass(){
       valeurByte[stack] = Serial2.read(); //Read the value & stacks it
       stack = (stack + 1) % 8; //Allows to read the full 8 bytes
       if (stack == 0) {
-        tempAngleCompass = (valeurByte[2] - 48) * 100 + (valeurByte[3] - 48) * 10 + (valeurByte[4] - 48); //Computes the angle by reading bytes 
+        tempAngleCompass = (valeurByte[2] - 48) * 100 + (valeurByte[3] - 48) * 10 + (valeurByte[4] - 48); //Computes the angle by reading bytes
         value = true;
       }
     }
   }
-  valueFromCompass = tempAngleCompass;  
-  
-//        Serial.print("THIS IS THE ANGLE FROM THE COMPASS VALUE : ");
-    Serial.println(valueFromCompass);
+  valueFromCompass = tempAngleCompass;
+
+  //        Serial.print("THIS IS THE ANGLE FROM THE COMPASS VALUE : ");
+  Serial.println(valueFromCompass);
 }
 
 
 //--------------------------------------ODOMETRY
 double totalDistance = 0;
-void odometry(){
-  if(digitalRead(M1) == HIGH){
-    distanceLeft = factorPulseToDistance*durationLeft; //Distance travelled by the left wheel   
-        totalDistance +=distanceLeft;
+void odometry() {
+  if (digitalRead(M1) == HIGH) {
+    distanceLeft = factorPulseToDistance * durationLeft; //Distance travelled by the left wheel
+    totalDistance += distanceLeft;
 
   }
-  else{
-    distanceLeft = -factorPulseToDistance*durationLeft; //Distance travelled by the left wheel   
+  else {
+    distanceLeft = -factorPulseToDistance * durationLeft; //Distance travelled by the left wheel
   }
-  if(digitalRead(M2) == LOW){
-    distanceRight = factorPulseToDistance*durationRight; //Distance travelled by the right wheel   
+  if (digitalRead(M2) == LOW) {
+    distanceRight = factorPulseToDistance * durationRight; //Distance travelled by the right wheel
   }
-  else{
-    distanceRight = -factorPulseToDistance*durationRight; //Distance travelled by the right wheel   
-  } 
+  else {
+    distanceRight = -factorPulseToDistance * durationRight; //Distance travelled by the right wheel
+  }
 
-  distanceCenter = (distanceLeft + distanceRight)/2;    
-  phi = (distanceRight - distanceLeft)/sizeBetweenWheels;
-  x = x + distanceCenter*cos(angle);
-  y = y + distanceCenter*sin(angle);
+  distanceCenter = (distanceLeft + distanceRight) / 2;
+  phi = (distanceRight - distanceLeft) / sizeBetweenWheels;
+  x = x + distanceCenter * cos(angle);
+  y = y + distanceCenter * sin(angle);
   angle = angle + phi; //New angle for our robot, to calibrate with the compass
   /*
-  Serial.print("This is x position :");
-  Serial.print(x);
-  Serial.print(" and this y position :");
-  Serial.print(y);
-  Serial.print(" and this this the angle delta : ");
-  Serial.println(angle);*/
+    Serial.print("This is x position :");
+    Serial.print(x);
+    Serial.print(" and this y position :");
+    Serial.print(y);
+    Serial.print(" and this this the angle delta : ");
+    Serial.println(angle);*/
 }
 /*
-//--------------------------------------PIXYREAD
+  //--------------------------------------PIXYREAD
 
-void pixyRead(){
+  void pixyRead(){
   // grab blocks!
   pixy.ccc.getBlocks();
-  
+
   // If there are detect blocks, print them!
   if (pixy.ccc.numBlocks)
   {
@@ -391,78 +392,78 @@ void pixyRead(){
       Serial.print("This is the value: ");
       Serial.println(value);
     }
-  }    
-}
+  }
+  }
 */
 
 //--------------------------------------ARM
 
-void arm(){
+void arm() {
   stop();
-   Serial.println("Arm Turning...");
-   for (int position = uplim; position < lowlim; position++) {  
-     servoArm.writeMicroseconds(position);
-     delay(downspeed);
-   }          
-   delay(waitingOnBottleTime);
-   for (int position = lowlim; position > intermediatePosition; position--) {
-     servoArm.writeMicroseconds(position);
-     delay(upspeedFirstPart);
-   }
-   for (int position = intermediatePosition; position > uplim; position-=2) {
-     servoArm.writeMicroseconds(position);
-     delay(upspeedSecondPart);
-   }
+  Serial.println("Arm Turning...");
+  for (int position = uplim; position < lowlim; position++) {
+    servoArm.writeMicroseconds(position);
+    delay(downspeed);
+  }
+  delay(waitingOnBottleTime);
+  for (int position = lowlim; position > intermediatePosition; position--) {
+    servoArm.writeMicroseconds(position);
+    delay(upspeedFirstPart);
+  }
+  for (int position = intermediatePosition; position > uplim; position -= 2) {
+    servoArm.writeMicroseconds(position);
+    delay(upspeedSecondPart);
+  }
 
-   Serial.println("-DONE TURNING-");
+  Serial.println("-DONE TURNING-");
 }
 
 //--------------------------------------BACK
 
-void back(){
-   stop();
-   Serial.println("Back opening...");
-   for (int position = uplim_b; position > lowlim_b; position--) {  
-     servoBack.write(position);
-        Serial.println(servoBack.read());
+void back() {
+  stop();
+  Serial.println("Back opening...");
+  for (int position = uplim_b; position > lowlim_b; position--) {
+    servoBack.write(position);
+    Serial.println(servoBack.read());
 
-     delay(speedBack);
-   }          
-   delay(waitingBottleOut);
-   for (int position = lowlim_b; position < uplim_b; position++) {
-     servoBack.write(position);
-        Serial.println(servoBack.read());
+    delay(speedBack);
+  }
+  delay(waitingBottleOut);
+  for (int position = lowlim_b; position < uplim_b; position++) {
+    servoBack.write(position);
+    Serial.println(servoBack.read());
 
-     delay(speedBack);
-   }   
-   Serial.println("-DONE OPENING/CLOSING-");   
+    delay(speedBack);
+  }
+  Serial.println("-DONE OPENING/CLOSING-");
 }
 
 //--------------------------------------STOP
 
 void stop(void)  //Stop
 {
-  digitalWrite(M1,LOW);
-  digitalWrite(M2,LOW);
+  digitalWrite(M1, LOW);
+  digitalWrite(M2, LOW);
   targetSpeedLeft = 0;
   targetSpeedRight = 0;
-  digitalWrite(E1,0);
-  digitalWrite(E2,0);
+  digitalWrite(E1, 0);
+  digitalWrite(E2, 0);
 }
 
 //--------------------------------------ADVANCE
 
 void advance(char a, char b)  //Move forward
 {
-  digitalWrite(M1,HIGH);
-  digitalWrite(M2,LOW);
-  
+  digitalWrite(M1, HIGH);
+  digitalWrite(M2, LOW);
+
   targetSpeedLeft = a;
   targetSpeedRight = b;
-  
+
   //analogWrite (E1,a);      //PWM Speed Control
-  //analogWrite (E2,b);      
-  
+  //analogWrite (E2,b);
+
 
 }
 
@@ -470,44 +471,44 @@ void advance(char a, char b)  //Move forward
 
 void back_off (char a, char b) //Move backward
 {
-  digitalWrite(M1,LOW);
-  digitalWrite(M2,HIGH);
-  
-  targetSpeedLeft = a;
-  targetSpeedRight = b;
-  
-  //analogWrite (E1,a); 
-  //analogWrite (E2,b);
-  
-}
+  digitalWrite(M1, LOW);
+  digitalWrite(M2, HIGH);
 
-//--------------------------------------TURN LEFT
-
-void turn_L (char a,char b)  //Turn Left
-{
-  digitalWrite(M1,HIGH);
-  digitalWrite(M2,LOW);
-  
   targetSpeedLeft = a;
   targetSpeedRight = b;
 
   //analogWrite (E1,a);
   //analogWrite (E2,b);
-  
+
+}
+
+//--------------------------------------TURN LEFT
+
+void turn_L (char a, char b) //Turn Left
+{
+  digitalWrite(M1, HIGH);
+  digitalWrite(M2, LOW);
+
+  targetSpeedLeft = a;
+  targetSpeedRight = b;
+
+  //analogWrite (E1,a);
+  //analogWrite (E2,b);
+
 }
 
 
 //--------------------------------------TURN RIGHT
 
-void turn_R (char a,char b)  //Turn Right
+void turn_R (char a, char b) //Turn Right
 {
-  digitalWrite(M1,HIGH);
-  digitalWrite(M2,LOW);
-  
+  digitalWrite(M1, HIGH);
+  digitalWrite(M2, LOW);
+
   targetSpeedLeft = a;
   targetSpeedRight = b;
-  
+
   //analogWrite (E1,a);
   //analogWrite (E2,b);
-  
+
 }
