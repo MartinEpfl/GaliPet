@@ -24,7 +24,7 @@ const int sizeBadAreaGrassY = 200;
 const int sizeBadAreaRockXY = 300;
 const int sizeBadAreaUpperX = 300;
 const int sizeBadAreaUpperY = 200;
-const int greyArea = 100;
+const int greyArea = 150;
 const int sizeOfFullArena = 800; //IF FULL ARENA
 
 double epsilon = 20; //How close you dont want to get close to the area you don't want to go in
@@ -291,6 +291,7 @@ void loop() {
         case 'x'://Move Forward
           stop();
           count = 100;
+          robotIsHome = true;
           break;
       }
     }
@@ -321,12 +322,17 @@ void loop() {
     Serial.print(currentAngle);
     Serial.print(" VS ");
     Serial.println(angleCompass);*/
-    /*
-        Serial.print("Position du robot : (");
-        Serial.print(positionOfRobot.x);
-        Serial.print(";");
-        Serial.print(positionOfRobot.y);
-        Serial.println(")");*/
+
+    if (obstacleInFront() && !isCurrentlydodgingObstacle ) { //&& !goingToGetBottle
+
+      Serial.println("J'EFFECTUE l'EVITAGE D'OBSTACLE");
+      dodgingObstacle(sensorsObstacle[0].get_value());
+    }
+    Serial.print("Position du robot : (");
+    Serial.print(positionOfRobot.x);
+    Serial.print(";");
+    Serial.print(positionOfRobot.y);
+    Serial.println(")");
     if (
       !( //Don't look for the bottle if close to the rock area
         (positionOfRobot.x < sizeBadAreaRockXY && positionOfRobot.y > (sizeOfFullArena - sizeBadAreaRockXY - greyArea) && currentAngle < PI) ||
@@ -347,17 +353,12 @@ void loop() {
       Serial.println("JE CHERCHE LA BOUTEILLE MIAM MIAM LA BOUTEILLE");
     }
 
-    if (obstacleInFront() && !isCurrentlydodgingObstacle && !goingToGetBottle) {
-
-      Serial.println("J'EFFECTUE l4EVITAGE D'OSTACLE");
-      dodgingObstacle(sensorsObstacle[0].get_value());
-    }
     if (!travellingToADestination && !goingToGetBottle) {
       // Serial.println("JE CHOISIS UNE NOUVELLE DESTINATION");
       pickingADestination();
     }
 
-    else if (travellingToADestination && !goingToGetBottle) {
+    if (travellingToADestination && !goingToGetBottle) {
       //  Serial.println("JE VAIS VERS LA DESTINATION");
       goingToALocation();
     }
@@ -386,14 +387,18 @@ void loop() {
 
 bool obstacleInFront() {
   for (int i = 0; i < numberOfSensorObstacle; i++) {
-    if (sensorsObstacle[i].get_value() < 80) {
+    sensorsObstacle[i].loop_sensor();
+  }
+  for (int i = 0; i < numberOfSensorObstacle; i++) {
+    if (sensorsObstacle[i].get_value() < 100) {
       // Serial.print("VALUE OF THE BOOL : ");
       // Serial.println(isCurrentlydodgingObstacle);
-
+      Serial.println("OUI OUI OUI");
       //  Serial.println("OBSTACLE DETECTED");
       return true;
     }
   }
+  //Serial.println("OUI OUI OUI");
   return false;
 }
 
@@ -415,9 +420,9 @@ void refreshAllPID() {
   analogWrite(E2, pwmOutRight);
 }
 /*
-if(obstacleInFront()){
+  if(obstacleInFront()){
   return;
-}*/
+  }*/
 
 void bottleDetection() {
 
@@ -432,8 +437,10 @@ void bottleDetection() {
           goingToGetBottle = true;
           if (sensorsFront[2].get_value() < veryCloseDistance) { // Right sensor detects --> T=0 M=0 L=0 R=1 but it's closer than focal point
             odometry();
+
             advance(speedForward * 0.6, speedForward * 0.2); //Turns right fast
             for (int i = 0; i < 15; i++) {
+
               delay(10);
               refreshAllPID();
             }
