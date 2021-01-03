@@ -185,8 +185,8 @@ const int numberOfSensorsFront = 4;
 
 sensor sensorsFront[numberOfSensorsFront];
 int pinsFront[] = {A1, A2, A3, A4}; //The sensors from 0 to 3 are left, middle, right, top according to the robots pov
-int cutOffDistance = 200; //Value used to check if there is something in front of the sensor (in a binary way)
-int veryCloseDistance = 20; //Value used to check if something is very close to the IR sensors
+int cutOffDistance = 100; //Value used to check if there is something in front of the sensor (in a binary way)
+int veryCloseDistance = 30; //Value used to check if something is very close to the IR sensors
 
 //////////////////////////////////////////////////////////////    SETUP   //////////////////////////////////////////////////////////////
 
@@ -281,7 +281,7 @@ void loop(void)
 
   //  pixyRead();
 
-  delay(10); //Needed because otherwise our loop function goes too fast
+  delay(5); //Needed because otherwise our loop function goes too fast
   // advance (speedForward, speedForward);   //move forward in max speed
   /*
     acc++;
@@ -483,11 +483,12 @@ void bottleDetection() {
   }
 
 
-  if (sensorsFront[3].get_value() > cutOffDistance) { //No obstacle detected --> T=0
+  if (sensorsFront[3].get_value() > 2*cutOffDistance) { //No obstacle detected --> T=0
     if (sensorsFront[1].get_value() > cutOffDistance) { //Nothing on middle sensor --> T=0 M=0
       if (sensorsFront[0].get_value() > cutOffDistance) { // Nothing on left sensor --> T=0 M=0 L=0
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=0 L=0 R=1
           if (sensorsFront[2].get_value() < veryCloseDistance) { // Right sensor detects --> T=0 M=0 L=0 R=1 but it's closer than focal point
+            Serial.println("Turns right fast");
             advance(speedForward * 0.6, speedForward * 0.2); //Turns right fast
             for (int i = 0; i < 15; i++) {
               delay(10);
@@ -495,6 +496,7 @@ void bottleDetection() {
             }
           }
           else {
+            Serial.println("Turns left slowly");
             advance(speedForward * 0.4, speedForward * 0.6); //Turns left slowly
             for (int i = 0; i < 15; i++) {
               delay(10);
@@ -510,6 +512,7 @@ void bottleDetection() {
       else { // Left sensor detects --> T=0 M=0 L=1
         if (sensorsFront[2].get_value() > cutOffDistance) { // Nothing on right sensor --> T=0 M=0 L=1 R=0
           if (sensorsFront[0].get_value() < veryCloseDistance) { // Only left sensor detects --> T=0 M=0 L=1 R=0 but it's closer than focal point
+            Serial.println("Turns left fast");
             advance(speedForward * 0.2, speedForward * 0.6); //Turns left fast
             for (int i = 0; i < 15; i++) {
               delay(10);
@@ -517,6 +520,7 @@ void bottleDetection() {
             }
           }
           else {
+            Serial.println("Turns right slowly");
             advance(speedForward * 0.6, speedForward * 0.4); //Turns right slowly
             for (int i = 0; i < 15; i++) {
               delay(10);
@@ -530,22 +534,25 @@ void bottleDetection() {
     else { //Middle sensor detects --> T=0 M=1
       if (sensorsFront[0].get_value() < cutOffDistance) { // Left sensor detects --> T=0 M=1 L=1
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=1 L=1 R=1
-          advance(speedForward * 0.5, speedForward * 0.5); //Goes forward for a bit
+          Serial.println("Goes forward for a bit");
+          advance(speedForward * 0.3, speedForward * 0.3); //Goes forward for a bit
           for (int i = 0; i < 15; i++) {
             delay(10);
             refreshAllPID();
           }
           delay(1000);
+          Serial.println("Grabs bottle");
           stop();
           for (int i = 0; i < 15; i++) {
             delay(10);
             refreshAllPID();
           }
           arm();                                          //Grabs bottle
-          advance(speedForward * 0.8, speedForward * 0.8);
+          advance(speedForward * 0.5, speedForward * 0.5);
         }
         else { // Nothing on right detector --> T=0 M=1 L=1 R=0
           if (sensorsFront[0].get_value() < veryCloseDistance) { // Left sensor detects --> T=0 M=1 L=1 R=0 but it's closer than focal point
+            Serial.println("Turns left fast");
             advance(speedForward * 0.2, speedForward * 0.6); //Turns left fast
             for (int i = 0; i < 15; i++) {
               delay(10);
@@ -553,6 +560,7 @@ void bottleDetection() {
             }
           }
           else {
+            Serial.println("Turns right fast");
             advance(speedForward * 0.6, speedForward * 0.2); //Turns right fast
             for (int i = 0; i < 15; i++) {
               delay(10);
@@ -565,6 +573,7 @@ void bottleDetection() {
       else { // Nothing on left sensor --> T=0 M=1 L=0
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=1 L=0 R=1
           if (sensorsFront[2].get_value() < veryCloseDistance) { // Right sensor detects --> T=0 M=1 L=0 R=1 but it's closer than focal point
+            Serial.println("Turns right fast");
             advance(speedForward * 0.6, speedForward * 0.2); //Turns right fast
             for (int i = 0; i < 15; i++) {
               delay(10);
@@ -572,6 +581,7 @@ void bottleDetection() {
             }
           }
           else {
+            Serial.println("Turns left fast");
             advance(speedForward * 0.2, speedForward * 0.6); //Turns left fast
             for (int i = 0; i < 15; i++) {
               delay(10);
@@ -580,6 +590,7 @@ void bottleDetection() {
           }
         }
         else { // Nothing on Right sensor --> T=0 M=1 L=0 R=0
+          Serial.println("Goes forward");
           advance(speedForward * 0.5, speedForward * 0.5); //Goes forward
           for (int i = 0; i < 15; i++) {
             delay(10);
@@ -590,7 +601,7 @@ void bottleDetection() {
     }
   }
   else { // Top sensor detects --> T=1
-
+    Serial.println("Obstacle detected");
     stop();
     for (int i = 0; i < 15; i++) {
       delay(10);
