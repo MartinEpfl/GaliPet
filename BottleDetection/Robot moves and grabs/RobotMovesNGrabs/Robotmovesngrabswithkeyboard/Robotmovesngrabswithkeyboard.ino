@@ -186,7 +186,7 @@ const int numberOfSensorsFront = 4;
 sensor sensorsFront[numberOfSensorsFront];
 int pinsFront[] = {A1, A2, A3, A4}; //The sensors from 0 to 3 are left, middle, right, top according to the robots pov
 int cutOffDistance = 100; //Value used to check if there is something in front of the sensor (in a binary way)
-int veryCloseDistance = 30; //Value used to check if something is very close to the IR sensors
+int veryCloseDistance = 35; //Value used to check if something is very close to the IR sensors
 
 //////////////////////////////////////////////////////////////    SETUP   //////////////////////////////////////////////////////////////
 
@@ -483,7 +483,7 @@ void bottleDetection() {
   }
 
 
-  if (sensorsFront[3].get_value() > 2*cutOffDistance) { //No obstacle detected --> T=0
+  if (sensorsFront[3].get_value() > 1.5*cutOffDistance) { //No obstacle detected --> T=0
     if (sensorsFront[1].get_value() > cutOffDistance) { //Nothing on middle sensor --> T=0 M=0
       if (sensorsFront[0].get_value() > cutOffDistance) { // Nothing on left sensor --> T=0 M=0 L=0
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=0 L=0 R=1
