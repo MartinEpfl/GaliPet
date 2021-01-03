@@ -161,8 +161,8 @@ int pinservoArm =  8; //Pin of servo for the ARM (PWM)
 int positionOfArm;
 int uplim = 500; //Position when the arm is at the top
 int lowlim = 2700; //Position when the arm is at the bottom
-int upspeedFirstPart = 3;
-int upspeedSecondPart = 3;
+int upspeedFirstPart = 1;
+int upspeedSecondPart = 1;
 int downspeed = 1;
 int setspeed = 10;
 int waitingOnBottleTime = 1000; //Time waited on the bottle
@@ -334,7 +334,7 @@ void loop() {
     Serial.print(positionOfRobot.y);
     Serial.print(") ");
     Serial.print("Current angle : ");
-    Serial.print(currentAngle/PI*180);
+    Serial.print(currentAngle / PI * 180);
     Serial.println(";");
     if (
       !( //Don't look for the bottle if close to the rock area
@@ -367,7 +367,6 @@ void loop() {
     }
   }
   if (count == maxIteration || robotIsHome ) {
-    double angleAtArrival = currentAngle;
     do {
       odometry();
       dodge_L(optimalSpeedTurn, optimalSpeedTurn);
@@ -377,7 +376,7 @@ void loop() {
 
       refreshAllPID();
       delay(30);
-    } while (abs(angleAtArrival - currentAngle) < PI); //TODO CAREFUL WHEN GOING FROM 2PI to 0
+    } while (   currentAngle > (PI/3.0) && currentAngle<(PI/6.0)); //TODO CAREFUL WHEN GOING FROM 2PI to 0
     count = maxIteration + 2;
     robotIsHome = false;
     stop();
@@ -491,19 +490,28 @@ void bottleDetection() {
       goingToGetBottle = true;
       if (sensorsFront[0].get_value() < cutOffDistance) { // Left sensor detects --> T=0 M=1 L=1
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=1 L=1 R=1
+
+
+          Serial.println(currentAngle / PI * 360);
           odometry();
-          advance(speedForward * 0.5, speedForward * 0.5); //Goes forward for a bit
+          advance(speedForward * 0.3, speedForward * 0.3); //Goes forward for a bit
           for (int i = 0; i < 15; i++) {
             delay(10);
             refreshAllPID();
           }
-          delay(1000);
+          //  delay(1000);
+          Serial.println(currentAngle / PI * 360);
+
+          odometry();
           stop();
           for (int i = 0; i < 15; i++) {
             delay(10);
             refreshAllPID();
           }
+          Serial.println(currentAngle / PI * 360);
+
           odometry();
+          Serial.println(currentAngle / PI * 360);
           arm();                                          //Grabs bottle
           odometry();
           goingToGetBottle = false;
@@ -594,7 +602,8 @@ void pickingADestination() {
         Serial.print(possibilities[i].x);
         Serial.print( " , ");
         Serial.println(possibilities[i].y);*/
-    possibilities[i].canGoThere = checkIfCanGo(possibilities[i]);
+    possibilities[i].canGoThere = checkIfCanGo(possibilities[i]) ;//&& pinsObstacle[i].get_value<100;
+    
     possibilities[i].howFar = returnPossibilitiesFromPosition( possibilities[i].x, possibilities[i].y , angles[i] );
     totalFar += possibilities[i].howFar;
     /*
@@ -854,16 +863,16 @@ void odometry() {
   phi = (distanceRight - distanceLeft) / sizeBetweenWheels;
   positionOfRobot.x = positionOfRobot.x + distanceCenter * cos(currentAngle);
   positionOfRobot.y = positionOfRobot.y + distanceCenter * sin(currentAngle);
- /* if (count % 10 == 0 and time_ == 0) {
-    //Updating the compass value
-    // stop();
-    // readValueCompass();
-    //   currentAngle = angleCompass;
-    // currentAngle = currentAngle + phi;
-  }*/
-//  else {
-    currentAngle = currentAngle + phi; //New angle for our robot, to calibrate with the compass
-//  }
+  /* if (count % 10 == 0 and time_ == 0) {
+     //Updating the compass value
+     // stop();
+     // readValueCompass();
+     //   currentAngle = angleCompass;
+     // currentAngle = currentAngle + phi;
+    }*/
+  //  else {
+  currentAngle = currentAngle + phi; //New angle for our robot, to calibrate with the compass
+  //  }
   if (currentAngle > 2 * PI) {
     currentAngle -= 2 * PI;
   }
