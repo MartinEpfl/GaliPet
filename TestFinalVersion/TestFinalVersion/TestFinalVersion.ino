@@ -24,7 +24,7 @@ const int sizeBadAreaGrassY = 200;
 const int sizeBadAreaRockXY = 300;
 const int sizeBadAreaUpperX = 300;
 const int sizeBadAreaUpperY = 200;
-
+const int greyArea = 100;
 const int sizeOfFullArena = 800; //IF FULL ARENA
 
 double epsilon = 20; //How close you dont want to get close to the area you don't want to go in
@@ -143,14 +143,14 @@ sensor sensorsBack[numberOfSensorsBack];
 sensor sensorsObstacle[numberOfSensorObstacle];
 
 int pinsBack[] = {12, 13}; //Analog Pins for the back sensors
+int pinsObstacle[] = {A4, A5};
 
 
 double thresholdBackSensors = 15; //The value in cm before the robot stops going backward if there is an obstacle at less than this distance.
 
-const int numberOfSensorsFront = 4;
-
+const int numberOfSensorsFront = 3;
 sensor sensorsFront[numberOfSensorsFront];
-int pinsFront[] = {A1, A2, A3, A4}; //The sensors from 0 to 3 are left, middle, right, top according to the robots pov
+int pinsFront[] = {A1, A2, A3}; //The sensors from 0 to 3 are left, middle, right, top according to the robots pov
 int cutOffDistance = 200; //Value used to check if there is something in front of the sensor (in a binary way)
 int veryCloseDistance = 20; //Value used to check if something is very close to the IR sensors
 
@@ -168,7 +168,7 @@ int setspeed = 10;
 int waitingOnBottleTime = 1000; //Time waited on the bottle
 int intermediatePosition = 1000;
 int numberOfBottles = 0;
-const int numberMaxOfBottle = 0;
+const int numberMaxOfBottle = 1;
 ///////Servo of the back/////////
 Servo servoBack;
 int pinServoBack = 9; //Pin of servo for the back (PWM)
@@ -212,8 +212,8 @@ unsigned long currentTime = millis();
 unsigned long diffTime = currentTime - previousTime;
 unsigned long timeBeforeDelay = millis();
 unsigned long timeAfterDelay = millis();
-unsigned long timeSinceBegin;
-double timeBeforeGoingHome = 2 * 60 * 1000; //In milliseconds
+float timeSinceBegin;
+float timeBeforeGoingHome = 2 * 60; //In Seconds
 
 //PID for motor control
 
@@ -270,7 +270,7 @@ void setup() {
     sensorsBack[i].sensorInit(pinsBack[i], 30);
   }
   for (int i = 0; i < numberOfSensorObstacle; i++) {
-    sensorsObstacle[i].sensorInit(pinsFront[i], 80);
+    sensorsObstacle[i].sensorInit(pinsObstacle[i], 80);
   }
   for (int i = 0; i < numberOfSensorsFront; i++) {
     sensorsFront[i].sensorInit(pinsFront[i], 80);
@@ -310,27 +310,13 @@ void loop() {
     for (int i = 0; i < numberOfSensorObstacle; i++) {
       sensorsObstacle[i].loop_sensor();
     }
-    previousTime = currentTime;
-    currentTime = millis();
-    diffTime = currentTime - previousTime;
-    //  Serial.print("THIS IS DIFF TIME : ");
-    // Serial.println(diffTime);
-    //  delay(50);
-    timeBeforeDelay = millis();
-    //Serial.print("THIS IS MINUS : ");
-    // Serial.println(20 - (timeBeforeDelay -  timeAfterDelay));
-    //  delay(30 - (timeBeforeDelay -  timeAfterDelay));//-(timeBeforeDelay -  timeAfterDelay)); //Always 20 ms
 
-    timeAfterDelay = millis();
-    durationLeft = abs(leftEncoder.read()); //Reads the left accumulated encodeur
-    durationRight = abs(rightEncoder.read()); //Reads the value accumulated on the right encodeur
-    speedWheelLeft = 1000 * factorPulseToDistance * durationLeft / diffTime; //  cm/s
-    speedWheelRight = 1000 * factorPulseToDistance * durationRight / diffTime; //  cm/s
     odometry();
 
+    // Serial.print("TIME SINCE BEGIN : ");
+    // Serial.println(timeSinceBegin / 1000.0 );
+    goingHome = ((timeSinceBegin / 1000.0) > timeBeforeGoingHome) || (numberOfBottles >= numberMaxOfBottle);
 
-    goingHome = (timeSinceBegin > timeBeforeGoingHome) || (numberOfBottles>=numberMaxOfBottle);
-    
     refreshAllPID(); /*
     Serial.print(currentAngle);
     Serial.print(" VS ");
@@ -341,9 +327,21 @@ void loop() {
         Serial.print(";");
         Serial.print(positionOfRobot.y);
         Serial.println(")");*/
+    if (
+      !( //Don't look for the bottle if close to the rock area
+        (positionOfRobot.x < sizeBadAreaRockXY && positionOfRobot.y > (sizeOfFullArena - sizeBadAreaRockXY - greyArea) && currentAngle < PI) ||
+        (positionOfRobot.x < (sizeBadAreaRockXY + greyArea) && positionOfRobot.y > (sizeOfFullArena - sizeBadAreaRockXY) && currentAngle > (PI / 2.0) && currentAngle < (3 * PI / 2)) ||
+        (positionOfRobot.x < (sizeBadAreaRockXY + greyArea) && positionOfRobot.y > (sizeOfFullArena - sizeBadAreaRockXY - greyArea) &&  currentAngle > (PI / 2.0) && currentAngle < (PI)) ||
+        //Don't look for the bottles if close to the grass area
+        (positionOfRobot.x > (sizeOfFullArena - sizeBadAreaGrassX - greyArea) && positionOfRobot.y < sizeBadAreaGrassY && (currentAngle < (PI / 2.0) || currentAngle > (3.0 * PI / 2.0))) ||
+        (positionOfRobot.x > (sizeOfFullArena - sizeBadAreaGrassX) && positionOfRobot.y < (sizeBadAreaGrassY + greyArea) && currentAngle > PI ) ||
+        (positionOfRobot.x > (sizeOfFullArena - sizeBadAreaGrassX - greyArea) && positionOfRobot.y < (sizeBadAreaGrassY + greyArea) && currentAngle > (3.0 * PI / 2.0))
+      )
 
-    if (!isCurrentlydodgingObstacle && !goingHome) {
-      bottleDetection();
+    ) {
+      if (!isCurrentlydodgingObstacle && !goingHome) {
+        bottleDetection();
+      }
     }
     if (goingToGetBottle) {
       Serial.println("JE CHERCHE LA BOUTEILLE MIAM MIAM LA BOUTEILLE");
@@ -354,30 +352,35 @@ void loop() {
       isCurrentlydodgingObstacle  = true;
       goingBack = false;
       wasGoingBack = false;
+      Serial.println("J'EFFECTUE l4EVITAGE D'OSTACLE");
       dodgingObstacle(sensorsObstacle[0].get_value());
     }
     if (!travellingToADestination && !goingToGetBottle) {
-      Serial.println("JE CHOISIS UNE NOUVELLE DESTINATION");
+      // Serial.println("JE CHOISIS UNE NOUVELLE DESTINATION");
       pickingADestination();
     }
 
     else if (travellingToADestination && !goingToGetBottle) {
-      Serial.println("JE VAIS VERS LA DESTINATION");
+      //  Serial.println("JE VAIS VERS LA DESTINATION");
       goingToALocation();
     }
   }
   if (count == maxIteration || robotIsHome ) {
-
-    for (int i = 0; i < time_dodge * 2 ; i++) {
+    double angleAtArrival = currentAngle;
+    do {
       odometry();
-      dodge_R(optimalSpeedTurn, optimalSpeedTurn);
+      dodge_L(optimalSpeedTurn, optimalSpeedTurn);
+
+   //   Serial.println(abs(angleAtArrival - currentAngle));
+
+
       refreshAllPID();
       delay(30);
-    } 
+    } while (abs(angleAtArrival - currentAngle) < PI);
     count = maxIteration + 2;
     robotIsHome = false;
     stop();
-    back(); 
+    back();
   }
 
 
@@ -387,9 +390,10 @@ void loop() {
 bool obstacleInFront() {
   for (int i = 0; i < numberOfSensorObstacle; i++) {
     if (sensorsObstacle[i].get_value() < 80) {
-      Serial.print("VALUE OF THE BOOL : ");
-      Serial.println(isCurrentlydodgingObstacle);
-      Serial.println("OBSTACLE DETECTED");
+      // Serial.print("VALUE OF THE BOOL : ");
+      // Serial.println(isCurrentlydodgingObstacle);
+
+      //  Serial.println("OBSTACLE DETECTED");
       return true;
     }
   }
@@ -447,7 +451,7 @@ void bottleDetection() {
         }
         else {
           goingToGetBottle = false;
-          Serial.println("YA RIEN SUR LES SENSORS MON POTE");
+          //Serial.println("YA RIEN SUR LES SENSORS MON POTE");
           //Do nothing ==> // Nothing detected --> T=0 M=0 L=0 R=0
         }
       }
@@ -547,19 +551,20 @@ void bottleDetection() {
     }
   }
   else { // Top sensor detects --> T=1
-    time_ = 0;
-    isCurrentlydodgingObstacle  = true;
-    goingBack = false;
-    wasGoingBack = false;
-    Serial.print("JE REPERE UN TRUC GENRE UN OBSTACLE A CETTE DISTANCE : ");
-    Serial.println(sensorsFront[3].get_value());
-    odometry();
-    dodgingObstacle(sensorsFront[3].get_value());
-    odometry();
-    for (int i = 0; i < 15; i++) {
-      delay(10);
-      refreshAllPID();
-    }
+    /*
+      time_ = 0;
+      isCurrentlydodgingObstacle  = true;
+      goingBack = false;
+      wasGoingBack = false;
+      Serial.print("JE REPERE UN TRUC GENRE UN OBSTACLE A CETTE DISTANCE : ");
+      Serial.println(sensorsFront[3].get_value());
+      odometry();
+      dodgingObstacle(sensorsFront[3].get_value());
+      odometry();
+      for (int i = 0; i < 15; i++) {
+        delay(10);
+        refreshAllPID();
+      }*/
   }
 }
 //If a location hasn't been picked yet then it will chose one
@@ -676,7 +681,7 @@ void goingToALocation() {
         isCurrentlydodgingObstacle  = false;
 
       }
-      Serial.println("MOVING LEFt");
+      // Serial.println("MOVING LEFt");
     }
     if (indexPosibility == 1) {
       if (time_ < time_forward) {
@@ -690,7 +695,7 @@ void goingToALocation() {
         isCurrentlydodgingObstacle  = false;
 
       }
-      Serial.println("MOVING FORWARD");
+      //  Serial.println("MOVING FORWARD");
     }
     if (indexPosibility == 2) {
       if (time_ < time_turn) {
@@ -704,7 +709,7 @@ void goingToALocation() {
         isCurrentlydodgingObstacle  = false;
 
       }
-      Serial.println("MOVING RIGHT");
+      //  Serial.println("MOVING RIGHT");
     }
     if (indexPosibility == 3) {
       if (time_ < time_dodge) {
@@ -774,37 +779,49 @@ void readValueCompass() {
 
 
 void dodgingObstacle(double distanceToObstacle) {
-  const int thresholdDistance = 20;
-  if (distanceToObstacle > thresholdDistance) {
-    leftRight[0].x = positionOfRobot.x + (sizeBetweenWheels / 2) * cos(currentAngle + PI / 2);
-    leftRight[0].y = positionOfRobot.y + (sizeBetweenWheels / 2) * sin(currentAngle + PI / 2);
-    leftRight[0].canGoThere = checkIfCanGo(leftRight[0]);
-    leftRight[1].x = positionOfRobot.x + (sizeBetweenWheels / 2) * cos(currentAngle + PI / 2);
-    leftRight[1].y = positionOfRobot.y + (sizeBetweenWheels / 2) * sin(currentAngle + PI / 2);
-    leftRight[1].canGoThere = checkIfCanGo(leftRight[1]);
-    if (leftRight[0].canGoThere && leftRight[1].canGoThere ) {
-      indexPosibility = random(3, 5);
-    }
-    else if (leftRight[0].canGoThere) {
-      indexPosibility = 3;
+  /*
+    const int thresholdDistance = 20;
+    if (distanceToObstacle > thresholdDistance) {
+      leftRight[0].x = positionOfRobot.x + (sizeBetweenWheels / 2) * cos(currentAngle + PI / 2);
+      leftRight[0].y = positionOfRobot.y + (sizeBetweenWheels / 2) * sin(currentAngle + PI / 2);
+      leftRight[0].canGoThere = checkIfCanGo(leftRight[0]);
+      leftRight[1].x = positionOfRobot.x + (sizeBetweenWheels / 2) * cos(currentAngle + PI / 2);
+      leftRight[1].y = positionOfRobot.y + (sizeBetweenWheels / 2) * sin(currentAngle + PI / 2);
+      leftRight[1].canGoThere = checkIfCanGo(leftRight[1]);
+      if (leftRight[0].canGoThere && leftRight[1].canGoThere ) {
+        indexPosibility = random(3, 5);
+      }
+      else if (leftRight[0].canGoThere) {
+        indexPosibility = 3;
+      }
+      else {
+        indexPosibility = 4;
+      }
+      travellingToADestination = true;
     }
     else {
-      indexPosibility = 4;
-    }
-    travellingToADestination = true;
-  }
-  else {
-    if (noObstacleBehind()) {
-      travellingToADestination = true;
-      goingBack = true;
-      wasGoingBack = true;
-    }
+      if (noObstacleBehind()) {
+        travellingToADestination = true;
+        goingBack = true;
+        wasGoingBack = true;
+      }
 
-  }
+    }*/
+  indexPosibility = random(3, 5);
+  travellingToADestination = true;
+
 }
 
 //Computes the new position of the robot & the angle that has to be changed using the compass
 void odometry() {
+  previousTime = currentTime;
+  currentTime = millis();
+  diffTime = currentTime - previousTime;
+  timeAfterDelay = millis();
+  durationLeft = abs(leftEncoder.read()); //Reads the left accumulated encodeur
+  durationRight = abs(rightEncoder.read()); //Reads the value accumulated on the right encodeur
+  speedWheelLeft = 1000 * factorPulseToDistance * durationLeft / diffTime; //  cm/s
+  speedWheelRight = 1000 * factorPulseToDistance * durationRight / diffTime; //  cm/s
   if (digitalRead(M1) == HIGH) {
     distanceLeft = factorPulseToDistance * durationLeft; //Distance travelled by the left wheel
   }
@@ -876,7 +893,7 @@ bool checkIfCanGo(position_ destination) {
     }
     //Uncomment this if u want to check full arena
     //!checkGrass(corners[i]) ||
-    if ( !checkRocks(corners[i]) || !checkUpperPart(corners[i]) ) {
+    if ( !checkGrass(corners[i]) || !checkRocks(corners[i]) || !checkUpperPart(corners[i]) ) {
       return false;
     }
   }
@@ -972,7 +989,7 @@ void back() {
   Serial.println("Back opening...");
   for (int position = uplim_b; position > lowlim_b; position--) {
     servoBack.write(position);
-    Serial.println(servoBack.read());
+   // Serial.println(servoBack.read());
 
     delay(speedBack);
   }
