@@ -232,7 +232,7 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(19200);      //Set Baud Rate
   Serial2.begin(9600); //Compass has a Baud Rate of 9600
-  randomSeed(analogRead(13));
+  randomSeed(analogRead(1));
 
   //  readValueCompass();
   initialDifference = currentAngle - angleCompass ;
@@ -332,7 +332,10 @@ void loop() {
     Serial.print(positionOfRobot.x);
     Serial.print(";");
     Serial.print(positionOfRobot.y);
-    Serial.println(")");
+    Serial.print(") ");
+    Serial.print("Current angle : ");
+    Serial.print(currentAngle/PI*180);
+    Serial.println(";");
     if (
       !( //Don't look for the bottle if close to the rock area
         (positionOfRobot.x < sizeBadAreaRockXY && positionOfRobot.y > (sizeOfFullArena - sizeBadAreaRockXY - greyArea) && currentAngle < PI) ||
@@ -500,9 +503,10 @@ void bottleDetection() {
             delay(10);
             refreshAllPID();
           }
-          arm();                                          //Grabs bottle
-          goingToGetBottle = false;
           odometry();
+          arm();                                          //Grabs bottle
+          odometry();
+          goingToGetBottle = false;
           advance(speedForward * 0.8, speedForward * 0.8);
         }
         else { // Nothing on right detector --> T=0 M=1 L=1 R=0
@@ -850,16 +854,16 @@ void odometry() {
   phi = (distanceRight - distanceLeft) / sizeBetweenWheels;
   positionOfRobot.x = positionOfRobot.x + distanceCenter * cos(currentAngle);
   positionOfRobot.y = positionOfRobot.y + distanceCenter * sin(currentAngle);
-  if (count % 10 == 0 and time_ == 0) {
+ /* if (count % 10 == 0 and time_ == 0) {
     //Updating the compass value
     // stop();
     // readValueCompass();
     //   currentAngle = angleCompass;
     // currentAngle = currentAngle + phi;
-  }
-  else {
+  }*/
+//  else {
     currentAngle = currentAngle + phi; //New angle for our robot, to calibrate with the compass
-  }
+//  }
   if (currentAngle > 2 * PI) {
     currentAngle -= 2 * PI;
   }
