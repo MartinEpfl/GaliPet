@@ -81,7 +81,7 @@ const int optimalSpeedTurn = sizeBetweenWheels * (PI / 4);
 int time_ = 0;
 const int time_forward = 40;
 const int time_turn = 40;
-const int time_dodge = 10;
+const int time_dodge = 40;
 
 /////////////////////////////////////////////////////
 byte incomingByte; //Byte being read from user
@@ -151,8 +151,8 @@ double thresholdBackSensors = 15; //The value in cm before the robot stops going
 const int numberOfSensorsFront = 3;
 sensor sensorsFront[numberOfSensorsFront];
 int pinsFront[] = {A1, A2, A3}; //The sensors from 0 to 3 are left, middle, right, top according to the robots pov
-int cutOffDistance = 200; //Value used to check if there is something in front of the sensor (in a binary way)
-int veryCloseDistance = 20; //Value used to check if something is very close to the IR sensors
+int cutOffDistance = 100; //Value used to check if there is something in front of the sensor (in a binary way)
+int veryCloseDistance = 35; //Value used to check if something is very close to the IR sensors
 
 ///////Servo of the Arm////////////
 
@@ -348,10 +348,7 @@ void loop() {
     }
 
     if (obstacleInFront() && !isCurrentlydodgingObstacle && !goingToGetBottle) {
-      time_ = 0;
-      isCurrentlydodgingObstacle  = true;
-      goingBack = false;
-      wasGoingBack = false;
+
       Serial.println("J'EFFECTUE l4EVITAGE D'OSTACLE");
       dodgingObstacle(sensorsObstacle[0].get_value());
     }
@@ -371,12 +368,12 @@ void loop() {
       odometry();
       dodge_L(optimalSpeedTurn, optimalSpeedTurn);
 
-   //   Serial.println(abs(angleAtArrival - currentAngle));
+      //   Serial.println(abs(angleAtArrival - currentAngle));
 
 
       refreshAllPID();
       delay(30);
-    } while (abs(angleAtArrival - currentAngle) < PI);
+    } while (abs(angleAtArrival - currentAngle) < PI); //TODO CAREFUL WHEN GOING FROM 2PI to 0
     count = maxIteration + 2;
     robotIsHome = false;
     stop();
@@ -417,7 +414,10 @@ void refreshAllPID() {
   analogWrite(E1, pwmOutLeft);
   analogWrite(E2, pwmOutRight);
 }
-
+/*
+if(obstacleInFront()){
+  return;
+}*/
 
 void bottleDetection() {
 
@@ -425,8 +425,7 @@ void bottleDetection() {
     sensorsFront[i].loop_sensor();
   }
 
-
-  if (sensorsFront[3].get_value() > cutOffDistance) { //No obstacle detected --> T=0
+  if (sensorsObstacle[0].get_value() > 1.5 * cutOffDistance) { //No obstacle detected --> T=0
     if (sensorsFront[1].get_value() > cutOffDistance) { //Nothing on middle sensor --> T=0 M=0
       if (sensorsFront[0].get_value() > cutOffDistance) { // Nothing on left sensor --> T=0 M=0 L=0
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=0 L=0 R=1
@@ -779,6 +778,11 @@ void readValueCompass() {
 
 
 void dodgingObstacle(double distanceToObstacle) {
+  time_ = 0;
+  isCurrentlydodgingObstacle  = true;
+  goingBack = false;
+  wasGoingBack = false;
+  goingToGetBottle = false;
   /*
     const int thresholdDistance = 20;
     if (distanceToObstacle > thresholdDistance) {
@@ -989,7 +993,7 @@ void back() {
   Serial.println("Back opening...");
   for (int position = uplim_b; position > lowlim_b; position--) {
     servoBack.write(position);
-   // Serial.println(servoBack.read());
+    // Serial.println(servoBack.read());
 
     delay(speedBack);
   }
