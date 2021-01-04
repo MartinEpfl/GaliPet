@@ -136,17 +136,17 @@ struct sensor {
   }
 };
 const int numberOfSensorsBack = 2;
-const int numberOfSensorObstacle = 1;
+const int numberOfSensorObstacle = 3;
 
 
 sensor sensorsBack[numberOfSensorsBack];
 sensor sensorsObstacle[numberOfSensorObstacle];
 
 int pinsBack[] = {12, 13}; //Analog Pins for the back sensors
-int pinsObstacle[] = {A4, A5};
+int pinsObstacle[] = {A4, A5, A6};
 
 
-double thresholdBackSensors = 15; //The value in cm before the robot stops going backward if there is an obstacle at less than this distance.
+double thresholdBackSensors = 30; //The value in cm before the robot stops going backward if there is an obstacle at less than this distance.
 
 const int numberOfSensorsFront = 3;
 sensor sensorsFront[numberOfSensorsFront];
@@ -168,7 +168,7 @@ int setspeed = 10;
 int waitingOnBottleTime = 1000; //Time waited on the bottle
 int intermediatePosition = 1000;
 int numberOfBottles = 0;
-const int numberMaxOfBottle = 1;
+const int numberMaxOfBottle = 10;
 ///////Servo of the back/////////
 Servo servoBack;
 int pinServoBack = 9; //Pin of servo for the back (PWM)
@@ -281,6 +281,8 @@ double compassArray[5];
 
 
 void loop() {
+  Serial.println(sensorsBack[1].get_value() );
+
   timeSinceBegin = millis();
   if (Serial.available()) {
     char val = Serial.read();
@@ -305,7 +307,7 @@ void loop() {
 
     }
     //UPDATING THE BACK SENSORS :
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < numberOfSensorsBack; i++) {
       sensorsBack[i].loop_sensor();
     }
     for (int i = 0; i < numberOfSensorObstacle; i++) {
@@ -326,16 +328,17 @@ void loop() {
     if (obstacleInFront() && !isCurrentlydodgingObstacle ) { //&& !goingToGetBottle
 
       Serial.println("J'EFFECTUE l'EVITAGE D'OBSTACLE");
-      dodgingObstacle(sensorsObstacle[0].get_value());
+      dodgingObstacle();
     }
-    Serial.print("Position du robot : (");
-    Serial.print(positionOfRobot.x);
-    Serial.print(";");
-    Serial.print(positionOfRobot.y);
-    Serial.print(") ");
-    Serial.print("Current angle : ");
-    Serial.print(currentAngle / PI * 180);
-    Serial.println(";");
+    /*
+      Serial.print("Position du robot : (");
+      Serial.print(positionOfRobot.x);
+      Serial.print(";");
+      Serial.print(positionOfRobot.y);
+      Serial.print(") ");
+      Serial.print("Current angle : ");
+      Serial.print(currentAngle / PI * 180);
+      Serial.println(";");*/
     if (
       !( //Don't look for the bottle if close to the rock area
         (positionOfRobot.x < sizeBadAreaRockXY && positionOfRobot.y > (sizeOfFullArena - sizeBadAreaRockXY - greyArea) && currentAngle < PI) ||
@@ -376,7 +379,7 @@ void loop() {
 
       refreshAllPID();
       delay(30);
-    } while (   currentAngle > (PI/3.0) && currentAngle<(PI/6.0)); //TODO CAREFUL WHEN GOING FROM 2PI to 0
+    } while (   currentAngle > (PI / 3.0) && currentAngle < (PI / 6.0)); //TODO CAREFUL WHEN GOING FROM 2PI to 0
     count = maxIteration + 2;
     robotIsHome = false;
     stop();
@@ -392,10 +395,10 @@ bool obstacleInFront() {
     sensorsObstacle[i].loop_sensor();
   }
   for (int i = 0; i < numberOfSensorObstacle; i++) {
-    if (sensorsObstacle[i].get_value() < 100) {
+    if (sensorsObstacle[i].get_value() < 75) {
       // Serial.print("VALUE OF THE BOOL : ");
       // Serial.println(isCurrentlydodgingObstacle);
-      Serial.println("OUI OUI OUI");
+      // Serial.println("OUI OUI OUI");
       //  Serial.println("OBSTACLE DETECTED");
       return true;
     }
@@ -408,6 +411,7 @@ bool obstacleInFront() {
 //Returns false it there is an obstacle
 bool noObstacleBehind() {
   for (int i = 0; i < numberOfSensorsBack; i++) {
+
     if (sensorsBack[i].get_value() < thresholdBackSensors) {
       return false;
     }
@@ -603,7 +607,7 @@ void pickingADestination() {
         Serial.print( " , ");
         Serial.println(possibilities[i].y);*/
     possibilities[i].canGoThere = checkIfCanGo(possibilities[i]) ;//&& pinsObstacle[i].get_value<100;
-    
+
     possibilities[i].howFar = returnPossibilitiesFromPosition( possibilities[i].x, possibilities[i].y , angles[i] );
     totalFar += possibilities[i].howFar;
     /*
@@ -661,7 +665,7 @@ void pickingADestination() {
 //If a location has been picked then the robot will do the pre-determined movement
 void goingToALocation() {
   if (goingBack) {
-    if (!noObstacleBehind()) {
+    if (noObstacleBehind()) {
       if (time_ < 40) {
         back_off(optimalSpeedBackward, optimalSpeedBackward);
         //    Serial.println("GOING BACK");
@@ -797,9 +801,9 @@ void readValueCompass() {
 
 
 
-void dodgingObstacle(double distanceToObstacle) {
+void dodgingObstacle() {
   time_ = 0;
-  isCurrentlydodgingObstacle  = true;
+  //isCurrentlydodgingObstacle  = true;
   goingBack = false;
   wasGoingBack = false;
   goingToGetBottle = false;
@@ -831,8 +835,43 @@ void dodgingObstacle(double distanceToObstacle) {
       }
 
     }*/
+  double thresholdDistanceAvoid = 50;
+  if (sensorsObstacle[0].get_value() < thresholdDistanceAvoid) { //S0=1
+    if (sensorsObstacle[2].get_value() < thresholdDistanceAvoid) { //S2=1
+      Serial.println("S0 =1 S2 = 1");
+      goingBack = true;
+      travellingToADestination = true;
+    }
+    else { //S2=0
+      Serial.println("S0 =1 S2 = 0");
+      isCurrentlydodgingObstacle  = true;
+      indexPosibility = 4;
+      time_ = time_dodge / 2.0;
+      travellingToADestination = true;
+    }
+  }
+  else { //S0=0
+    if (sensorsObstacle[2].get_value() < thresholdDistanceAvoid) { //S2=1
+      Serial.println("S0 =0 S2 = 1");
+
+      isCurrentlydodgingObstacle  = true;
+      indexPosibility = 3;
+      time_ = time_dodge / 2.0;
+      travellingToADestination = true;
+    }
+    else { //S2=0
+      if (sensorsObstacle[1].get_value() < thresholdDistanceAvoid) { //S1==1
+        Serial.println("S0 =0 S1 = 1 S2 = 0");
+
+        goingBack = true;
+        travellingToADestination = true;
+      }
+      else {
+        return;
+      }
+    }
+  }
   indexPosibility = random(3, 5);
-  travellingToADestination = true;
 
 }
 
@@ -1020,7 +1059,6 @@ void back() {
   delay(waitingBottleOut);
   for (int position = lowlim_b; position < uplim_b; position++) {
     servoBack.write(position);
-    Serial.println(servoBack.read());
 
     delay(speedBack);
   }
