@@ -70,9 +70,9 @@ double currentAngle = PI / 4; //Starting angle
 
 
 //All the speed for going forward/going back/left & right
-const int optimalSpeedLower = (r - sizeBetweenWheels / 2) * (PI / 4);
-const int optimalSpeedUpper = (r + sizeBetweenWheels / 2) * (PI / 4);
-const int optimalSpeedForward = r;
+const int optimalSpeedLower = (r - sizeBetweenWheels / 2) * (PI / 4) / 1.5;
+const int optimalSpeedUpper = (r + sizeBetweenWheels / 2) * (PI / 4) / 1.5;
+const int optimalSpeedForward = r / 1.5;
 const int optimalSpeedBackward = optimalSpeedForward;
 const int optimalSpeedTurn = sizeBetweenWheels * (PI / 4);
 
@@ -286,7 +286,6 @@ double compassArray[5];
 
 
 void loop() {
-  Serial.println(sensorsBack[1].get_value() );
 
   timeSinceBegin = millis();
   if (Serial.available()) {
@@ -346,19 +345,26 @@ void loop() {
     Serial.println(";");
     if (
       !( //Don't look for the bottle if close to the rock area
-        (positionOfRobot.x < sizeBadAreaRockXY && positionOfRobot.y > (sizeOfFullArena - sizeBadAreaRockXY - greyArea) && currentAngle < PI) ||
-        (positionOfRobot.x < (sizeBadAreaRockXY + greyArea) && positionOfRobot.y > (sizeOfFullArena - sizeBadAreaRockXY) && currentAngle > (PI / 2.0) && currentAngle < (3 * PI / 2)) ||
-        (positionOfRobot.x < (sizeBadAreaRockXY + greyArea) && positionOfRobot.y > (sizeOfFullArena - sizeBadAreaRockXY - greyArea) &&  currentAngle > (PI / 2.0) && currentAngle < (PI)) ||
+        ((positionOfRobot.x > (sizeOfFullArena - sizeBadAreaGrassX - greyArea)) && (positionOfRobot.y < sizeBadAreaGrassY) && ((currentAngle < (PI / 2.0) ) || (currentAngle > (3.0 * PI / 2.0)))) ||
+        ((positionOfRobot.x > (sizeOfFullArena - sizeBadAreaGrassX)) && (positionOfRobot.y < (sizeBadAreaGrassY + greyArea)) && (currentAngle > PI )) ||
+        ((positionOfRobot.x > (sizeOfFullArena - sizeBadAreaGrassX - greyArea)) && (positionOfRobot.y < (sizeBadAreaGrassY + greyArea)) && (currentAngle > (3.0 * PI / 2.0))) ||
+
         //Don't look for the bottles if close to the grass area
-        (positionOfRobot.x > (sizeOfFullArena - sizeBadAreaGrassX - greyArea) && positionOfRobot.y < sizeBadAreaGrassY && (currentAngle < (PI / 2.0) || currentAngle > (3.0 * PI / 2.0))) ||
-        (positionOfRobot.x > (sizeOfFullArena - sizeBadAreaGrassX) && positionOfRobot.y < (sizeBadAreaGrassY + greyArea) && currentAngle > PI ) ||
-        (positionOfRobot.x > (sizeOfFullArena - sizeBadAreaGrassX - greyArea) && positionOfRobot.y < (sizeBadAreaGrassY + greyArea) && currentAngle > (3.0 * PI / 2.0))
+        ((positionOfRobot.x < sizeBadAreaRockXY) && (positionOfRobot.y > (sizeOfFullArena - sizeBadAreaRockXY - greyArea)) && (currentAngle < PI)) ||
+        ((positionOfRobot.x < (sizeBadAreaRockXY + greyArea)) && (positionOfRobot.y > (sizeOfFullArena - sizeBadAreaRockXY)) && (currentAngle > (PI / 2.0)) && (currentAngle < (3 * PI / 2))) ||
+        ((positionOfRobot.x < (sizeBadAreaRockXY + greyArea)) && (positionOfRobot.y > (sizeOfFullArena - sizeBadAreaRockXY - greyArea)) &&  (currentAngle > (PI / 2.0)) && (currentAngle < (PI)))
+
       )
 
     ) {
       if (!isCurrentlydodgingObstacle && !goingHome) {
+
+
         bottleDetection();
       }
+    }
+    else {
+      goingToGetBottle = false;
     }
     if (goingToGetBottle) {
       Serial.println("JE CHERCHE LA BOUTEILLE MIAM MIAM LA BOUTEILLE");
@@ -376,19 +382,20 @@ void loop() {
   }
 
   if (count == maxIteration || robotIsHome ) {
-    
+
     odometry();
     if (sensorsObstacle[0].get_value() > sizeHeight) { //Checks if it can turn to the left
       do {
         dodge_L(optimalSpeedTurn, optimalSpeedTurn);
         refreshAllPID();
+        odometry();
         delay(30);
       } while (   currentAngle > (PI / 3.0) || currentAngle < (PI / 6.0));
     }
     else {//Otherwise turns to the right
       do {
         dodge_R(optimalSpeedTurn, optimalSpeedTurn);
-
+        odometry();
         refreshAllPID();
         delay(30);
       } while (   currentAngle > (PI / 3.0) || currentAngle < (PI / 6.0));
