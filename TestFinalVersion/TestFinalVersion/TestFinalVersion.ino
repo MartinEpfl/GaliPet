@@ -183,7 +183,7 @@ int E1 = 6;     //M1 Speed Control (PWM)
 int M1 = 27;     //M1 Direction Control (Digital)
 int E2 = 7; //M2 Speed Control (PWM)
 int M2 = 29; //M2 Direction control (Digital)
-int speedForward = 30 ; //Speed moving forward cm/s
+int speedForward = 40 ; //Speed moving forward cm/s
 int speedBackward = 50; //Speed moving backward cm/s
 int speedTurning = 30; //Speed while turning cm/s
 double diameterWheels = 12; //cm
@@ -374,17 +374,33 @@ void loop() {
       goingToALocation();
     }
   }
+
   if (count == maxIteration || robotIsHome ) {
-    do {
+    
+    odometry();
+    if (sensorsObstacle[0].get_value() > sizeHeight) { //Checks if it can turn to the left
+      do {
+        dodge_L(optimalSpeedTurn, optimalSpeedTurn);
+        refreshAllPID();
+        delay(30);
+      } while (   currentAngle > (PI / 3.0) || currentAngle < (PI / 6.0));
+    }
+    else {//Otherwise turns to the right
+      do {
+        dodge_R(optimalSpeedTurn, optimalSpeedTurn);
+
+        refreshAllPID();
+        delay(30);
+      } while (   currentAngle > (PI / 3.0) || currentAngle < (PI / 6.0));
+    }
+
+    while (!noObstacleBehind()) { //Makes sur the wall behind is far enought so that the back can open
+      advance(speedForward * 0.2, speedForward * 0.2);
       odometry();
-      dodge_L(optimalSpeedTurn, optimalSpeedTurn);
-
-      //   Serial.println(abs(angleAtArrival - currentAngle));
-
-
       refreshAllPID();
-      delay(30);
-    } while (   currentAngle > (PI / 3.0) || currentAngle < (PI / 6.0)); //TODO CAREFUL WHEN GOING FROM 2PI to 0
+      delay(10);
+    }
+
     count = maxIteration + 2;
     robotIsHome = false;
     stop();
@@ -453,6 +469,7 @@ void bottleDetection() {
             for (int i = 0; i < 15; i++) {
 
               delay(10);
+              odometry();
               refreshAllPID();
             }
           }
@@ -461,6 +478,7 @@ void bottleDetection() {
             advance(speedForward * 0.4, speedForward * 0.6); //Turns left slowly
             for (int i = 0; i < 15; i++) {
               delay(10);
+              odometry();
               refreshAllPID();
             }
           }
@@ -480,6 +498,7 @@ void bottleDetection() {
             advance(speedForward * 0.2, speedForward * 0.6); //Turns left fast
             for (int i = 0; i < 15; i++) {
               delay(10);
+              odometry();
               refreshAllPID();
             }
           }
@@ -488,6 +507,7 @@ void bottleDetection() {
             advance(speedForward * 0.6, speedForward * 0.4); //Turns right slowly
             for (int i = 0; i < 15; i++) {
               delay(10);
+              odometry();
               refreshAllPID();
             }
           }
@@ -504,11 +524,13 @@ void bottleDetection() {
           Serial.println(currentAngle / PI * 180);
           odometry();
           advance(speedForward * 0.3, speedForward * 0.3); //Goes forward for a bit
-          for (int i = 0; i < 100; i++) {
-            delay(10);
+          for (int i = 0; i < 10; i++) {
             refreshAllPID();
+            delay(10);
+            odometry();
+
           }
-          //delay(3000);
+          //delay(1000);
           Serial.println(currentAngle / PI * 180);
 
           odometry();
@@ -516,10 +538,11 @@ void bottleDetection() {
           for (int i = 0; i < 15; i++) {
             delay(10);
             refreshAllPID();
+            odometry();
+
           }
           Serial.println(currentAngle / PI * 180);
 
-          odometry();
           Serial.println(currentAngle / PI * 180);
           arm();                                          //Grabs bottle
           odometry();
@@ -532,6 +555,7 @@ void bottleDetection() {
             advance(speedForward * 0.2, speedForward * 0.6); //Turns left fast
             for (int i = 0; i < 15; i++) {
               delay(10);
+              odometry();
               refreshAllPID();
             }
           }
@@ -540,6 +564,7 @@ void bottleDetection() {
             advance(speedForward * 0.6, speedForward * 0.2); //Turns right fast
             for (int i = 0; i < 15; i++) {
               delay(10);
+              odometry();
               refreshAllPID();
             }
           }
@@ -554,6 +579,7 @@ void bottleDetection() {
             advance(speedForward * 0.6, speedForward * 0.2); //Turns right fast
             for (int i = 0; i < 15; i++) {
               delay(10);
+              odometry();
               refreshAllPID();
             }
           }
@@ -562,6 +588,8 @@ void bottleDetection() {
             advance(speedForward * 0.2, speedForward * 0.6); //Turns left fast
             for (int i = 0; i < 15; i++) {
               delay(10);
+
+              odometry();
               refreshAllPID();
             }
           }
@@ -571,6 +599,7 @@ void bottleDetection() {
           advance(speedForward * 0.5, speedForward * 0.5); //Goes forward
           for (int i = 0; i < 15; i++) {
             delay(10);
+            odometry();
             refreshAllPID();
           }
         }

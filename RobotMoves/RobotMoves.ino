@@ -44,11 +44,11 @@ int E1 = 6;     //M1 Speed Control (PWM)
 int M1 = 27;     //M1 Direction Control (Digital)
 int E2 = 7; //M2 Speed Control (PWM)
 int M2 = 29; //M2 Direction control (Digital)
-//int speedForward = 30 ; //Speed moving forward cm/s
+//int speedForward = 40 ; //Speed moving forward cm/s
 int speedBackward = 50; //Speed moving backward cm/s
 int speedTurning = 30; //Speed while turning cm/s
 
-const int r = 30;
+const int r = 40;
 const double sizeBetweenWheels = 38.3;
 double speedForward = r;//(r-sizeBetweenWheels/2)*(PI/4);
 const int optimalSpeedUpper = (r + sizeBetweenWheels / 2) * (PI / 4);
@@ -148,7 +148,7 @@ void setup(void)
   Serial.println("DONE");
   positionOfBack = servoBack.read();
   Serial.println("Reseting the back...");
- // servoBack.write(uplim_b);
+  // servoBack.write(uplim_b);
   Serial.println("DONE");
 
 
@@ -193,15 +193,15 @@ void loop(void)
   odometry();
   leftEncoder.write(0); //Resets the accumulators to 0
   rightEncoder.write(0);
-  
-    Serial.print(pwmOutRight);
-    Serial.print("  ");
-    Serial.print(speedWheelRight);
-    Serial.println("  ");/*
+
+  Serial.print(pwmOutRight);
+  Serial.print("  ");
+  Serial.print(speedWheelRight);
+  Serial.println("  ");/*
     Serial.print(pwmOutLeft);
     Serial.print("  ");
     Serial.println(speedWheelLeft);*/
-  
+  refreshAllPID();
 
   //  pixyRead();
 
@@ -223,7 +223,9 @@ void loop(void)
       {
         case 'w'://Move Forward
           Serial.println("Move forward");
-          advance (speedForward, speedForward);   //move forward in max speed
+          stop();
+          advance(speedForward * 0.5, speedForward * 0.5);
+          //advance (speedForward, speedForward);   //move forward in max speed
           break;
         case 's'://Move Backward
           Serial.println("Move backward");
@@ -286,26 +288,26 @@ void loop(void)
     }
     else stop();
     /*
-    Serial.println("Controls : W to advance.");
-    Serial.println("s to back off.");
-    Serial.println("a to go left.");
-    Serial.println("d to go right.");
-    Serial.println("l to make the arm go down.");
-    Serial.println("d to open the back.");
-    Serial.println("Run keyboard control");*/
+      Serial.println("Controls : W to advance.");
+      Serial.println("s to back off.");
+      Serial.println("a to go left.");
+      Serial.println("d to go right.");
+      Serial.println("l to make the arm go down.");
+      Serial.println("d to open the back.");
+      Serial.println("Run keyboard control");*/
   }
-
-  leftPID.Compute();
-  rightPID.Compute();
-  analogWrite(E1, pwmOutLeft);
-  analogWrite(E2, pwmOutRight);
 
 
 
 }
 
 //////////////////////////////////////////////////////////////    OTHER FUNCTIONS   //////////////////////////////////////////////////////////////
-
+void refreshAllPID() {
+  leftPID.Compute();
+  rightPID.Compute();
+  analogWrite(E1, pwmOutLeft);
+  analogWrite(E2, pwmOutRight);
+}
 void readValueCompass() {
   char valeurByte[8];
   int stack = 0;
@@ -402,7 +404,7 @@ void odometry() {
 void arm() {
   stop();
   Serial.println("Arm Turning...");
-  for (int position = uplim; position < lowlim; position+=2) {
+  for (int position = uplim; position < lowlim; position += 2) {
     servoArm.writeMicroseconds(position);
     delay(downspeed);
   }
