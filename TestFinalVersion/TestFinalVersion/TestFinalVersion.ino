@@ -173,8 +173,8 @@ const int numberMaxOfBottle = 5;
 Servo servoBack;
 int pinServoBack = 9; //Pin of servo for the back (PWM)
 int positionOfBack;
-int uplim_b = 100; //Position of back when close
-int lowlim_b = 35; //Position of back when open
+int uplim_b = 45; //Position of back when close
+int lowlim_b = 0; //Position of back when open
 int speedBack = 50; //Speed back is opening/closing
 int waitingBottleOut = 3000; //Waiting for bottle to go out
 
@@ -220,12 +220,12 @@ float timeBeforeGoingHome = 3 * 60; //In Seconds
 //For the left motor
 double targetSpeedLeft = 50; //
 double pwmOutLeft = 0;
-PID leftPID(&speedWheelLeft, &pwmOutLeft, &targetSpeedLeft, 5.1, 0.5, 0.005, DIRECT);
+PID leftPID(&speedWheelLeft, &pwmOutLeft, &targetSpeedLeft, 5.1, 2, 0.005, DIRECT);
 
 //For the right motor
 double targetSpeedRight = 0;
 double pwmOutRight = 0;
-PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight, 5.3, 0.5, 0.005, DIRECT);
+PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight, 5.1, 2, 0.005, DIRECT);
 
 void setup() {
   timeSinceBegin = millis();
@@ -252,10 +252,11 @@ void setup() {
   Serial.println("Reseting the back...");
   for (int position = lowlim_b; position < uplim_b; position++) {
     servoBack.write(position);
+    delay(1);
 
   }
   delay(100);
-  servoBack.detach();
+  // servoBack.detach();
 
   // PIDs on
 
@@ -334,15 +335,15 @@ void loop() {
       Serial.println("J'EFFECTUE l'EVITAGE D'OBSTACLE");
       dodgingObstacle();
     }
-    
-      Serial.print("Position du robot : (");
-      Serial.print(positionOfRobot.x);
-      Serial.print(";");
-      Serial.print(positionOfRobot.y);
-      Serial.print(") ");
-      Serial.print("Current angle : ");
-      Serial.print(currentAngle / PI * 180);
-      Serial.println(";");
+
+    Serial.print("Position du robot : (");
+    Serial.print(positionOfRobot.x);
+    Serial.print(";");
+    Serial.print(positionOfRobot.y);
+    Serial.print(") ");
+    Serial.print("Current angle : ");
+    Serial.print(currentAngle / PI * 180);
+    Serial.println(";");
     if (
       !( //Don't look for the bottle if close to the rock area
         (positionOfRobot.x < sizeBadAreaRockXY && positionOfRobot.y > (sizeOfFullArena - sizeBadAreaRockXY - greyArea) && currentAngle < PI) ||
@@ -502,12 +503,12 @@ void bottleDetection() {
 
           Serial.println(currentAngle / PI * 180);
           odometry();
-          advance(speedForward*0.3, speedForward*0.3); //Goes forward for a bit
-          for (int i = 0; i < 15; i++) {
+          advance(speedForward * 0.3, speedForward * 0.3); //Goes forward for a bit
+          for (int i = 0; i < 100; i++) {
             delay(10);
             refreshAllPID();
           }
-            //delay(3000);
+          //delay(3000);
           Serial.println(currentAngle / PI * 180);
 
           odometry();
@@ -875,7 +876,7 @@ void dodgingObstacle() {
       }
     }
   }
-  indexPosibility = random(3, 5);
+  //  indexPosibility = random(3, 5);
 
 }
 
@@ -1052,20 +1053,20 @@ void arm() {
 
 //The back is opening
 void back() {
-  servoBack.attach(pinServoBack);
+  delay(1000);
   stop();
   Serial.println("Back opening...");
   for (int position = uplim_b; position > lowlim_b; position--) {
     servoBack.write(position);
-
+    delay(1);
   }
   delay(waitingBottleOut);
   for (int position = lowlim_b; position < uplim_b; position++) {
     servoBack.write(position);
-
+    delay(1);
   }
   Serial.println("-DONE OPENING/CLOSING-");
-  servoBack.detach();
+
 
 }
 
