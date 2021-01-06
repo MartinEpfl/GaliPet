@@ -144,7 +144,7 @@ void setup(void)
   pinMode(M2, OUTPUT);
 
   //setting up servos
-  servoArm.attach(pinservoArm);
+  // servoArm.attach(pinservoArm);
   // servoBack.attach(pinServoBack);
   positionOfArm = servoArm.read();
   Serial.println("Reseting the arm...");
@@ -215,7 +215,7 @@ void setup(void)
   Serial.println("l to make the arm go down.");
   Serial.println("d to open the back.");
   Serial.println("Run keyboard control");
-  //Serial2.write(0xC0);
+  //  Serial2.write(0xC0);
 
 }
 
@@ -294,9 +294,15 @@ void loop(void)
 
         case 'x':
           stop();
-          //   Serial2.write(0xC1);
           break;
-
+        case 'n':
+          Serial2.write(0xC0);
+          Serial.println("START");
+          break;
+        case 'm':
+          Serial2.write(0xC1);
+          Serial.println("END");
+          break;
         case '+':
           leftPID.SetTunings(rightPID.GetKp() + 0.5, rightPID.GetKi(), rightPID.GetKd());
           Serial.print("rightPID P value is now : ");

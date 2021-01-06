@@ -90,7 +90,9 @@ byte incomingByte; //Byte being read from user
 ////////////////Compass//////////
 double angleCompass = 0;
 double initialDifference = 0;
-
+double diffMax = 0;
+double valueFromCompass;
+double diff;
 //////////////////////SENSORS//////////////////////////////////////
 
 const int window_size = 5;
@@ -227,6 +229,7 @@ double targetSpeedRight = 0;
 double pwmOutRight = 0;
 PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight, 5.1, 2, 0.005, DIRECT);
 
+
 void setup() {
   timeSinceBegin = millis();
   // put your setup code here, to run once:
@@ -234,8 +237,9 @@ void setup() {
   Serial2.begin(9600); //Compass has a Baud Rate of 9600
   randomSeed(analogRead(1));
 
-  //  readValueCompass();
-  initialDifference = currentAngle - angleCompass ;
+  readValueCompass();
+  initialDifference = valueFromCompass - currentAngle ;
+  diffMax = 0;
   pinMode(E1, OUTPUT);
   pinMode(M1, OUTPUT);
   pinMode(E2, OUTPUT);
@@ -804,7 +808,6 @@ void goingToALocation() {
     }
   }
 }
-
 //Reading the angle from the compass, the angle read from the compass is going clock wise (counter trygonometric) and in degree. Both of these things have to be changed.
 void readValueCompass() {
   char valeurByte[8];
@@ -825,22 +828,59 @@ void readValueCompass() {
       }
     }
   }
-  angleCompass = 2 * PI * (360 - tempAngleCompass) / 360 + initialDifference;
+  //angleCompass = 2 * PI * (360 - tempAngleCompass) / 360 + initialDifference;
+  valueFromCompass = checkBoundsRadian(toRadian(tempAngleCompass) - initialDifference);
+  diff = checkBoundsDiffRadian(currentAngle - valueFromCompass); //En radian
+  if (diff > diffMax) diffMax = diff;
+
   if (angleCompass > 2 * PI) {
     angleCompass -= 2 * PI;
   }
   else if (angleCompass < 0) {
     angleCompass += (2 * PI);
   }
-  Serial.print("THIS IS THE ANGLE FROM THE COMPASS VALUE : ");
-  Serial.println(angleCompass / (2 * PI) * 360);
-  Serial.print("THIS IS ANGLE FROM THE ODOMETRY : ");
-  Serial.println(currentAngle / (2 * PI) * 360);
-  Serial.print("THIS IS THE DIFF : ");
-  Serial.println(abs(currentAngle - angleCompass) / (2 * PI) * 360);
+  /*
+    Serial.print("THIS IS THE ANGLE FROM THE COMPASS VALUE : ");
+    Serial.println(angleCompass / (2 * PI) * 360);
+    Serial.print("THIS IS ANGLE FROM THE ODOMETRY : ");
+    Serial.println(currentAngle / (2 * PI) * 360);
+    Serial.print("THIS IS THE DIFF : ");
+    Serial.println(abs(currentAngle - angleCompass) / (2 * PI) * 360);*/
+  Serial.print(toDegree(currentAngle)); //En degré
+  Serial.print(" ");
+  Serial.print(toDegree(valueFromCompass )); //En degré
+  Serial.print(" ");
+  Serial.print(toDegree(diff));
+  Serial.print(" ");
+  Serial.println(toDegree(diffMax));
 }
 
+double toDegree(double value) {
+  return checkBoundsDegree((value) / PI * 180);
+}
 
+double toRadian(double value) {
+  return checkBoundsRadian((360 - value) / 180 * PI);
+}
+
+double checkBoundsDegree(double value) {
+  if (value >= 360)return (value - 360);
+  if (value < 0) return (value + 360);
+  return value;
+}
+
+double checkBoundsRadian(double value) {
+  if (value >= 2 * PI) return (value - (2 * PI));
+  if (value < 0) return (value + (2 * PI));
+  return value;
+}
+
+double checkBoundsDiffRadian(double value) {
+  if (value >= PI)return 2 * PI - value;
+  if (value < (-PI)) return 2 * PI - abs(value);
+  if (value < 0.0) return abs(value);
+  return value;
+}
 
 void dodgingObstacle() {
   time_ = 0;
@@ -916,6 +956,7 @@ void dodgingObstacle() {
 
 }
 
+int acc = 0;
 //Computes the new position of the robot & the angle that has to be changed using the compass
 void odometry() {
   previousTime = currentTime;
@@ -943,13 +984,15 @@ void odometry() {
   phi = (distanceRight - distanceLeft) / sizeBetweenWheels;
   positionOfRobot.x = positionOfRobot.x + distanceCenter * cos(currentAngle);
   positionOfRobot.y = positionOfRobot.y + distanceCenter * sin(currentAngle);
-  /* if (count % 10 == 0 and time_ == 0) {
-     //Updating the compass value
-     // stop();
-     // readValueCompass();
-     //   currentAngle = angleCompass;
-     // currentAngle = currentAngle + phi;
-    }*/
+  if (acc % 10 == 0) {
+    //Updating the compass value
+    // stop();
+    readValueCompass();
+    acc = 1;
+    //   currentAngle = angleCompass;
+    // currentAngle = currentAngle + phi;
+  }
+  acc++;
   //  else {
   currentAngle = currentAngle + phi; //New angle for our robot, to calibrate with the compass
   //  }
