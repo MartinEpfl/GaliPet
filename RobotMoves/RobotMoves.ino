@@ -86,7 +86,7 @@ unsigned long diffTime = currentTime - previousTime;
 //Robot position (odometry)
 double x = 0; //Initialize position
 double y = 0;
-double angle = PI / 2; //Initial Angle (delta)
+double angle = PI / 4; //Initial Angle (delta)
 double phi = 0;
 double distanceLeft = speedWheelLeft * diffTime; //Distance travelled by the left wheel
 double distanceRight = speedWheelRight * diffTime;
@@ -161,8 +161,44 @@ void setup(void)
   rightPID.SetSampleTime(5);
 
   Serial2.begin(9600); //Compass has a Baud Rate of 9600
-
   // pixy.init();
+
+  delay(1000);
+  /*
+    digitalWrite(M1, HIGH);
+    digitalWrite(M2, HIGH);
+
+    do {
+    targetSpeedLeft = 15;
+    targetSpeedRight = 15;
+    odometry();
+    refreshAllPID();
+    delay(20);
+    Serial.println("Not high yet");
+    Serial.println(speedWheelLeft );
+    Serial.println(speedWheelRight );
+    } while ((speedWheelLeft < 12) || (speedWheelRight < 12));
+    /*
+    for (int i = 0; i < 1000; i++) {
+    odometry();
+    refreshAllPID();
+    delay(20);
+    }
+    //stop();
+
+    unsigned long startTime = millis();
+
+    Serial2.write(0xC0);
+
+    do {
+    odometry();
+    refreshAllPID();
+    startTime = millis();
+    delay(20);
+    } while ((startTime / 1000) < (3 * 60));
+
+    Serial2.write(0xC1);
+    stop();*/
 
   Serial.println("Controls :");
   Serial.println("w to advance.");
@@ -182,25 +218,15 @@ void loop(void)
 {
 
 
-  previousTime = currentTime;
-  currentTime = millis();
-  diffTime = currentTime - previousTime;
 
-  durationLeft = abs(leftEncoder.read()); //Reads the left accumulated encodeur
-  durationRight = abs(rightEncoder.read()); //Reads the value accumulated on the right encodeur
-  speedWheelLeft = 1000 * factorPulseToDistance * durationLeft / diffTime; //  cm/s
-  speedWheelRight = 1000 * factorPulseToDistance * durationRight / diffTime; //  cm/s
   odometry();
-  leftEncoder.write(0); //Resets the accumulators to 0
-  rightEncoder.write(0);
-
-  Serial.print(pwmOutRight);
-  Serial.print("  ");
-  Serial.print(speedWheelRight);
-  Serial.println("  ");/*
-    Serial.print(pwmOutLeft);
+  /* Serial.print(pwmOutRight);
     Serial.print("  ");
-    Serial.println(speedWheelLeft);*/
+    Serial.print(speedWheelRight);
+    Serial.println("  ");/*
+     Serial.print(pwmOutLeft);
+     Serial.print("  ");
+     Serial.println(speedWheelLeft);*/
   refreshAllPID();
 
   //  pixyRead();
@@ -212,7 +238,7 @@ void loop(void)
   acc = acc % 5;
   if (acc == 0) {
 
-    //readValueCompass();
+    readValueCompass();
   }
 
   if (Serial.available()) {
@@ -229,7 +255,7 @@ void loop(void)
           break;
         case 's'://Move Backward
           Serial.println("Move backward");
-          back_off (speedBackward, speedForward);   //move back in max speed
+          back_off (speedForward * 0.5, speedForward * 0.5);   //move back in max speed
           break;
         case 'a'://Turn Left
           turn_L (optimalSpeedLower, optimalSpeedUpper);
@@ -330,6 +356,9 @@ void readValueCompass() {
   valueFromCompass = tempAngleCompass;
 
   //        Serial.print("THIS IS THE ANGLE FROM THE COMPASS VALUE : ");
+  // Serial.println((360-angle)/180*PI - valueFromCompass);
+  Serial.println((2 * PI - angle) / PI * 180);
+  Serial.print(" ");
   Serial.println(valueFromCompass);
 }
 
@@ -337,6 +366,16 @@ void readValueCompass() {
 //--------------------------------------ODOMETRY
 double totalDistance = 0;
 void odometry() {
+  previousTime = currentTime;
+  currentTime = millis();
+  diffTime = currentTime - previousTime;
+
+  durationLeft = abs(leftEncoder.read()); //Reads the left accumulated encodeur
+  durationRight = abs(rightEncoder.read()); //Reads the value accumulated on the right encodeur
+  speedWheelLeft = 1000 * factorPulseToDistance * durationLeft / diffTime; //  cm/s
+  speedWheelRight = 1000 * factorPulseToDistance * durationRight / diffTime; //  cm/s
+  leftEncoder.write(0); //Resets the accumulators to 0
+  rightEncoder.write(0);
   if (digitalRead(M1) == HIGH) {
     distanceLeft = factorPulseToDistance * durationLeft; //Distance travelled by the left wheel
     totalDistance += distanceLeft;
@@ -357,6 +396,8 @@ void odometry() {
   x = x + distanceCenter * cos(angle);
   y = y + distanceCenter * sin(angle);
   angle = angle + phi; //New angle for our robot, to calibrate with the compass
+  if (angle > (2 * PI))angle -= (2 * PI);
+  else if (angle < 0) angle += 2 * PI;
   /*
     Serial.print("This is x position :");
     Serial.print(x);
