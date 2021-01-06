@@ -191,7 +191,7 @@ void setup(void)
     refreshAllPID();
     delay(20);
     }
-    //stop();
+    //stopRobot();
 
     unsigned long startTime = millis();
 
@@ -205,7 +205,7 @@ void setup(void)
     } while ((startTime / 1000) < (3 * 60));
 
     Serial2.write(0xC1);
-    stop();
+    stopRobot();
   */
   Serial.println("Controls :");
   Serial.println("w to advance.");
@@ -228,14 +228,15 @@ void loop(void)
 
 
   odometry();
-  /* Serial.print(pwmOutRight);
+   Serial.print(pwmOutRight);
     Serial.print("  ");
     Serial.print(speedWheelRight);
     Serial.println("  ");/*
      Serial.print(pwmOutLeft);
      Serial.print("  ");
-     Serial.println(speedWheelLeft);*/
-  refreshAllPID();
+     Serial.println(speedWheelLeft);
+ 
+  */refreshAllPID();
 
   //  pixyRead();
 
@@ -257,7 +258,7 @@ void loop(void)
       {
         case 'w'://Move Forward
           Serial.println("Move forward");
-          stop();
+          stopRobot();
           advance(speedForward * 0.5, speedForward * 0.5);
           //advance (speedForward, speedForward);   //move forward in max speed
           break;
@@ -293,7 +294,7 @@ void loop(void)
           break;
 
         case 'x':
-          stop();
+          stopRobot();
           break;
         case 'n':
           Serial2.write(0xC0);
@@ -332,7 +333,7 @@ void loop(void)
       }
 
     }
-    else stop();
+    else stopRobot();
     /*
       Serial.println("Controls : W to advance.");
       Serial.println("s to back off.");
@@ -378,14 +379,14 @@ void readValueCompass() {
   if (diff > diffMax) diffMax = diff;
   //        Serial.print("THIS IS THE ANGLE FROM THE COMPASS VALUE : ");
   // Serial.println((360-angle)/180*PI - valueFromCompass);
-
+/*
   Serial.print((angle)); //En degré
   Serial.print(" ");
   Serial.print((valueFromCompass )); //En degré
   Serial.print(" ");
   Serial.print((diff));
   Serial.print(" ");
-  Serial.println((diffMax));
+  Serial.println((diffMax));*/
   // Serial.print(" ");
   // Serial.println((offset));
 
@@ -497,19 +498,30 @@ void odometry() {
 //--------------------------------------ARM
 
 void arm() {
-  stop();
+  stopRobot();
   Serial.println("Arm Turning...");
   for (int position = uplim; position < lowlim; position += 2) {
     servoArm.writeMicroseconds(position);
+  //  refreshAllPID();
     delay(downspeed);
+      Serial.println(pwmOutLeft);
+
   }
+  Serial.println(pwmOutLeft);
   delay(waitingOnBottleTime);
+  //refreshAllPID();
   for (int position = lowlim; position > intermediatePosition; position--) {
     servoArm.writeMicroseconds(position);
+      Serial.println(pwmOutLeft);
+
+    //refreshAllPID();
     delay(upspeedFirstPart);
   }
   for (int position = intermediatePosition; position > uplim; position --) {
     servoArm.writeMicroseconds(position);
+    //refreshAllPID();
+      Serial.println(pwmOutLeft);
+
     delay(upspeedSecondPart);
   }
 
@@ -519,15 +531,17 @@ void arm() {
 //--------------------------------------BACK
 
 void back() {
-  stop();
+  stopRobot();
   Serial.println("Back opening...");
   for (int position = uplim_b; position > lowlim_b; position--) {
+    refreshAllPID();
     servoBack.write(position);
     Serial.println(servoBack.read());
 
   }
   delay(waitingBottleOut);
   for (int position = lowlim_b; position < uplim_b; position++) {
+    refreshAllPID();
     servoBack.write(position);
     Serial.println(servoBack.read());
 
@@ -537,7 +551,7 @@ void back() {
 
 //--------------------------------------STOP
 
-void stop(void)  //Stop
+void stopRobot(void)  //Stop
 {
   digitalWrite(M1, LOW);
   digitalWrite(M2, LOW);

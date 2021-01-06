@@ -66,7 +66,7 @@ double distanceLeft ;
 double distanceRight;
 double distanceCenter = (distanceLeft + distanceRight) / 2;
 double phi = 0;
-double currentAngle = 0; //Starting angle
+double currentAngle = PI / 4.0; //Starting angle
 
 
 //All the speed for going forward/going back/left & right
@@ -229,23 +229,26 @@ double targetSpeedRight = 0;
 double pwmOutRight = 0;
 PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight, 5.1, 2, 0.005, DIRECT);
 
+unsigned actual = millis();
+unsigned old = millis();
+unsigned long tempTime = millis();
 
 void setup() {
   timeSinceBegin = millis();
   // put your setup code here, to run once:
   Serial.begin(19200);      //Set Baud Rate
-  Serial2.begin(9600); //Compass has a Baud Rate of 9600
+  // Serial2.begin(9600); //Compass has a Baud Rate of 9600
   randomSeed(analogRead(1));
 
-  readValueCompass();
+  //readValueCompass();
   initialDifference = valueFromCompass - currentAngle ;
   diffMax = 0;
   pinMode(E1, OUTPUT);
   pinMode(M1, OUTPUT);
   pinMode(E2, OUTPUT);
   pinMode(M2, OUTPUT);
-  positionOfRobot.x = 100;
-  positionOfRobot.y = 400;
+  positionOfRobot.x = 50;
+  positionOfRobot.y = 50;
   //setting up servos
   servoBack.attach(pinServoBack);
   positionOfArm = servoArm.read();
@@ -288,9 +291,27 @@ void setup() {
 
 double compassArray[5];
 
-
 void loop() {
+  robotIsHome = true;
 
+  Serial.println(pwmOutLeft);
+  Serial.println(pwmOutRight);
+  if (isnan(pwmOutLeft)) {
+    analogWrite(E1, 0);
+    pwmOutLeft = 0;
+    Serial.println("NAN");
+  }
+  if (isnan(pwmOutRight)) {
+    analogWrite(E2, 0);
+    pwmOutLeft = 0;
+    Serial.println("NAN");
+  }
+  refreshAllPID();
+  old = actual;
+  actual = millis();
+
+  tempTime = actual - old;
+  Serial.println(tempTime);
   timeSinceBegin = millis();
   if (Serial.available()) {
     char val = Serial.read();
@@ -338,7 +359,7 @@ void loop() {
       //Serial.println("J'EFFECTUE l'EVITAGE D'OBSTACLE");
       dodgingObstacle();
     }
-/*
+
     Serial.print("Position du robot : (");
     Serial.print(positionOfRobot.x);
     Serial.print(";");
@@ -346,7 +367,7 @@ void loop() {
     Serial.print(") ");
     Serial.print("Current angle : ");
     Serial.print(currentAngle / PI * 180);
-    Serial.println(";");*/
+    Serial.println(";");
     if (
       !( //Don't look for the bottle if close to the rock area
         ((positionOfRobot.x > (sizeOfFullArena - sizeBadAreaGrassX - greyArea)) && (positionOfRobot.y < sizeBadAreaGrassY) && ((currentAngle < (PI / 2.0) ) || (currentAngle > (3.0 * PI / 2.0)))) ||
@@ -361,26 +382,27 @@ void loop() {
       )
 
     ) {
+      refreshAllPID();
       if (!isCurrentlydodgingObstacle && !goingHome) {
-
-
+        // Serial.println("JE CHERChE DES BOUTEILLES");
         bottleDetection();
       }
     }
     else {
+      time_ = 0;
       goingToGetBottle = false;
     }
     if (goingToGetBottle) {
-      //Serial.println("JE CHERCHE LA BOUTEILLE MIAM MIAM LA BOUTEILLE");
+      //         Serial.println("JE CHERCHE LA BOUTEILLE MIAM MIAM LA BOUTEILLE");
     }
 
     if (!travellingToADestination && !goingToGetBottle) {
-      // Serial.println("JE CHOISIS UNE NOUVELLE DESTINATION");
+      //Serial.println("JE CHOISIS UNE NOUVELLE DESTINATION");
       pickingADestination();
     }
 
     if (travellingToADestination && !goingToGetBottle) {
-      //  Serial.println("JE VAIS VERS LA DESTINATION");
+      //Serial.println("JE VAIS VERS LA DESTINATION");
       goingToALocation();
     }
   }
@@ -535,7 +557,7 @@ void bottleDetection() {
           //Serial.println(currentAngle / PI * 180);
           odometry();
           advance(speedForward * 0.3, speedForward * 0.3); //Goes forward for a bit
-          for (int i = 0; i < 10; i++) {
+          for (int i = 0; i < 100; i++) {
             refreshAllPID();
             delay(10);
             odometry();
@@ -558,7 +580,7 @@ void bottleDetection() {
           arm();                                          //Grabs bottle
           odometry();
           goingToGetBottle = false;
-          advance(speedForward * 0.8, speedForward * 0.8);
+          advance(speedForward * 0.5, speedForward * 0.5);
         }
         else { // Nothing on right detector --> T=0 M=1 L=1 R=0
           if (sensorsFront[0].get_value() < veryCloseDistance) { // Left sensor detects --> T=0 M=1 L=1 R=0 but it's closer than focal point
@@ -669,6 +691,7 @@ void pickingADestination() {
       wasGoingBack = false;
     }
   }
+  refreshAllPID();
   if (totalFar == 0)destinationAvailable = false;
   if (destinationAvailable) {
     travellingToADestination = true;
@@ -741,6 +764,8 @@ void goingToALocation() {
       if (time_ < time_turn) {
         turn_L(optimalSpeedLower, optimalSpeedUpper);
         time_++;
+        //Serial.println("MOVING LEFt");
+
       }
       else {
         time_ = 0;
@@ -749,12 +774,13 @@ void goingToALocation() {
         isCurrentlydodgingObstacle  = false;
 
       }
-      // Serial.println("MOVING LEFt");
     }
     if (indexPosibility == 1) {
       if (time_ < time_forward) {
         advance(optimalSpeedForward, optimalSpeedForward);
         time_++;
+        //Serial.println("MOVING FORWARD");
+
       }
       else {
         time_ = 0;
@@ -763,12 +789,13 @@ void goingToALocation() {
         isCurrentlydodgingObstacle  = false;
 
       }
-      //  Serial.println("MOVING FORWARD");
     }
     if (indexPosibility == 2) {
       if (time_ < time_turn) {
         turn_R(optimalSpeedUpper, optimalSpeedLower);
         time_++;
+        //Serial.println("MOVING RIGHT");
+
       }
       else {
         time_ = 0;
@@ -777,12 +804,13 @@ void goingToALocation() {
         isCurrentlydodgingObstacle  = false;
 
       }
-      //  Serial.println("MOVING RIGHT");
     }
     if (indexPosibility == 3) {
       if (time_ < time_dodge) {
         dodge_L(optimalSpeedTurn, optimalSpeedTurn);
         time_++;
+        //Serial.println("DODGING LEFT");
+
       }
       else {
         time_ = 0;
@@ -790,12 +818,13 @@ void goingToALocation() {
         count++;
         isCurrentlydodgingObstacle  = false;
       }
-      //Serial.println("DODGING LEFT");
     }
     if (indexPosibility == 4) {
       if (time_ < time_dodge) {
         dodge_R(optimalSpeedTurn, optimalSpeedTurn);
         time_++;
+        //  Serial.println("DODGING RIGHT");
+
       }
       else {
         time_ = 0;
@@ -804,7 +833,6 @@ void goingToALocation() {
         isCurrentlydodgingObstacle  = false;
       }
 
-      //Serial.println("DODGING RIGHT");
     }
   }
 }
@@ -818,7 +846,7 @@ void readValueCompass() {
   Serial2.write(0x31); //Asking for the angle, for each command sent you get 8 byte as an answer
   //First byte, enter => New Line => hundreds of angle => tens of angle => bits of angle => Decimal point of angle => Decimal of angle => Calibrate sum
   while (!value) {
-    
+
     if (Serial2.available()) {
       valeurByte[stack] = Serial2.read(); //Read the value & stacks it
       stack = (stack + 1) % 8; //Allows to read the full 8 bytes
@@ -839,7 +867,7 @@ void readValueCompass() {
   else if (angleCompass < 0) {
     angleCompass += (2 * PI);
   }
-  currentAngle = valueFromCompass;
+  //currentAngle = valueFromCompass;
   /*
     Serial.print("THIS IS THE ANGLE FROM THE COMPASS VALUE : ");
     Serial.println(angleCompass / (2 * PI) * 360);
@@ -847,14 +875,14 @@ void readValueCompass() {
     Serial.println(currentAngle / (2 * PI) * 360);
     Serial.print("THIS IS THE DIFF : ");
     Serial.println(abs(currentAngle - angleCompass) / (2 * PI) * 360);*/
-    
-  Serial.print(toDegree(currentAngle)); //En degré
-  Serial.print(" ");
-  Serial.print(toDegree(valueFromCompass )); //En degré
-  Serial.print(" ");
-  Serial.print(toDegree(diff));
-  Serial.print(" ");
-  Serial.println(toDegree(diffMax));
+  /*
+    Serial.print(toDegree(currentAngle)); //En degré
+    Serial.print(" ");
+    Serial.print(toDegree(valueFromCompass )); //En degré
+    Serial.print(" ");
+    Serial.print(toDegree(diff));
+    Serial.print(" ");
+    Serial.println(toDegree(diffMax));*/
 }
 
 double toDegree(double value) {
@@ -989,7 +1017,7 @@ void odometry() {
   if (acc % 10 == 0) {
     //Updating the compass value
     // stop();
-    readValueCompass();
+    // readValueCompass();
     acc = 1;
     //   currentAngle = angleCompass;
     // currentAngle = currentAngle + phi;
@@ -1063,6 +1091,8 @@ bool checkWalls(position_ destination) {
 
 //Check if a position is in the grass area
 bool checkGrass(position_ destination) {
+
+  if (goingHome) return true;
   if (destination.x > (sizeOfFullArena - sizeBadAreaGrassX - epsilon) && destination.y < (sizeBadAreaGrassY + epsilon)) { //Grass area
     return false;
   }
@@ -1114,21 +1144,28 @@ void arm() {
   numberOfBottles++;
   stop();
   servoArm.attach(pinservoArm);
+  refreshAllPID();
   //Serial.println("Arm Turning...");
   for (int position = uplim; position < lowlim; position++) {
     servoArm.writeMicroseconds(position);
+    refreshAllPID();
     delay(downspeed);
   }
   delay(waitingOnBottleTime);
+  refreshAllPID();
   for (int position = lowlim; position > intermediatePosition; position--) {
     servoArm.writeMicroseconds(position);
     delay(upspeedFirstPart);
+    refreshAllPID();
   }
   for (int position = intermediatePosition; position > uplim; position --) {
     servoArm.writeMicroseconds(position);
     delay(upspeedSecondPart);
+    refreshAllPID();
   }
   servoArm.detach();
+  pwmOutLeft = 0;
+  pwmOutRight = 0;
   //Serial.println("-DONE TURNING-");
 }
 
