@@ -1278,3 +1278,62 @@ void dodge_L (char a, char b) //Turn Right
   targetSpeedRight = b;
 
 }
+void recalibrate()
+{
+
+  double backToWheels = 35.5;
+  // go to angle=0
+  do {
+    turn_R(0.3 * speedForward, 0.3 * speedForward);
+    delay(10);
+    odometry();
+    refreshAllPID;
+  } while (currentAngle > PI / 24 || currentAngle < 47 * PI / 24);
+
+  // back off until you touch the wall
+  do {
+    back_off(speedForward * 0.3 * min(min(500, sensorsBack[1].get_value()) / min(500, sensorsBack[0].get_value()), 1.5), speedForward * 0.3 * min(min(500, sensorsBack[0].get_value()) / min(500, sensorsBack[1].get_value()), 1.5));
+    delay(10);
+    odometry();
+    refreshAllPID();
+  } while (sensorsBack[0].get_value() > 5 && sensorsBack[1].get_value() > 5);
+  delay(1000);
+
+  
+  
+  // calibrate the x position and the angle
+  currentAngle = 0;
+  positionOfRobot.x = backToWheels;
+
+  // go forward a bit
+  advance(speedForward * 0.3, speedForward * 0.3); //Goes forward for a bit
+  for (int i = 0; i < 100; i++) {
+    refreshAllPID();
+    delay(10);
+    odometry();
+  }
+
+  // go to angle=PI/2
+  do {
+    turn_L(0.3 * speedForward, 0.3 * speedForward);
+    delay(10);
+    odometry();
+    refreshAllPID;
+  } while (currentAngle < 11 * PI / 24 || currentAngle > 13 * PI / 24);
+
+
+  // back off until you touch the wall
+  do {
+    back_off(speedForward * 0.3 * min(min(500, sensorsBack[1].get_value()) / min(500, sensorsBack[0].get_value()), 1.5), speedForward * 0.3 * min(min(500, sensorsBack[0].get_value()) / min(500, sensorsBack[1].get_value()), 1.5));
+    delay(10);
+    odometry();
+    refreshAllPID();
+  } while (sensorsBack[0].get_value() > 5 && sensorsBack[1].get_value() > 5);
+  delay(1000);
+  
+  // recalibrate y position and the angle
+  currentAngle = PI / 2;
+  positionOfRobot.y = backToWheels;
+
+  Serial.println(positionOfRobot.x);
+}
