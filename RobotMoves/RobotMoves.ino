@@ -108,6 +108,10 @@ double pwmOutRight = 0;
 PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight, d, 2, 0.005, DIRECT);
 
 double valueFromCompass;
+
+double offset = 0;
+double diff;
+double diffMax = 0;
 /*
 
   //Pixy camera
@@ -141,7 +145,7 @@ void setup(void)
 
   //setting up servos
   servoArm.attach(pinservoArm);
-  servoBack.attach(pinServoBack);
+  // servoBack.attach(pinServoBack);
   positionOfArm = servoArm.read();
   Serial.println("Reseting the arm...");
   servoArm.writeMicroseconds(500);
@@ -164,6 +168,9 @@ void setup(void)
   // pixy.init();
 
   delay(1000);
+  readValueCompass();
+  offset = valueFromCompass - angle;
+  diffMax = 0;
   /*
     digitalWrite(M1, HIGH);
     digitalWrite(M2, HIGH);
@@ -198,8 +205,8 @@ void setup(void)
     } while ((startTime / 1000) < (3 * 60));
 
     Serial2.write(0xC1);
-    stop();*/
-
+    stop();
+  */
   Serial.println("Controls :");
   Serial.println("w to advance.");
   Serial.println("s to back off.");
@@ -208,6 +215,7 @@ void setup(void)
   Serial.println("l to make the arm go down.");
   Serial.println("d to open the back.");
   Serial.println("Run keyboard control");
+  //Serial2.write(0xC0);
 
 }
 
@@ -286,10 +294,9 @@ void loop(void)
 
         case 'x':
           stop();
+          //   Serial2.write(0xC1);
           break;
-        case 'q':
-          readValueCompass();
-          break;
+
         case '+':
           leftPID.SetTunings(rightPID.GetKp() + 0.5, rightPID.GetKi(), rightPID.GetKd());
           Serial.print("rightPID P value is now : ");
@@ -310,7 +317,14 @@ void loop(void)
           Serial.print("leftPID D value is now : ");
           Serial.println(leftPID.GetKd());
           break;
+        case 'q':
+          dodge_L(speedForward * 0.5, speedForward * 0.5);
+          break;
+        case 'e':
+          dodge_R(speedForward * 0.5, speedForward * 0.5);
+          break;
       }
+
     }
     else stop();
     /*
@@ -343,7 +357,6 @@ void readValueCompass() {
   Serial2.write(0x31); //Asking for the angle, for each command sent you get 8 byte as an answer
   //First byte, enter => New Line => hundreds of angle => tens of angle => bits of angle => Decimal point of angle => Decimal of angle => Calibrate sum
   while (!value) {
-
     if (Serial2.available()) {
       valeurByte[stack] = Serial2.read(); //Read the value & stacks it
       stack = (stack + 1) % 8; //Allows to read the full 8 bytes
@@ -353,16 +366,51 @@ void readValueCompass() {
       }
     }
   }
-  valueFromCompass = tempAngleCompass;
-
+  valueFromCompass = checkBoundsRadian(toRadian(tempAngleCompass) - offset);
+  //Serial.println(tempAngleCompass);
+  diff = checkBoundsDiffRadian(angle - valueFromCompass); //En radian
+  if (diff > diffMax) diffMax = diff;
   //        Serial.print("THIS IS THE ANGLE FROM THE COMPASS VALUE : ");
   // Serial.println((360-angle)/180*PI - valueFromCompass);
-  Serial.println((2 * PI - angle) / PI * 180);
+
+  Serial.print((angle)); //En degré
   Serial.print(" ");
-  Serial.println(valueFromCompass);
+  Serial.print((valueFromCompass )); //En degré
+  Serial.print(" ");
+  Serial.print((diff));
+  Serial.print(" ");
+  Serial.println((diffMax));
+  // Serial.print(" ");
+  // Serial.println((offset));
+
 }
 
+double toDegree(double value) {
+  return checkBoundsDegree((2 * PI - value) / PI * 180);
+}
 
+double toRadian(double value) {
+  return checkBoundsRadian((360 - value) / 180 * PI);
+}
+
+double checkBoundsDegree(double value) {
+  if (value >= 360)return (value - 360);
+  if (value < 0) return (value + 360);
+  return value;
+}
+
+double checkBoundsRadian(double value) {
+  if (value >= 2 * PI) return (value - (2 * PI));
+  if (value < 0) return (value + (2 * PI));
+  return value;
+}
+
+double checkBoundsDiffRadian(double value) {
+  if (value >= PI)return 2 * PI - value;
+  if (value < (-PI)) return 2 * PI - abs(value);
+  if (value < 0.0) return abs(value);
+  return value;
+}
 //--------------------------------------ODOMETRY
 double totalDistance = 0;
 void odometry() {
@@ -552,5 +600,23 @@ void turn_R (char a, char b) //Turn Right
 
   //analogWrite (E1,a);
   //analogWrite (E2,b);
+
+}
+
+void dodge_L(char a, char b) {
+  digitalWrite(M1, LOW);
+  digitalWrite(M2, LOW);
+
+  targetSpeedLeft = a;
+  targetSpeedRight = b;
+
+}
+
+void dodge_R(char a, char b) {
+  digitalWrite(M1, HIGH);
+  digitalWrite(M2, HIGH);
+
+  targetSpeedLeft = a;
+  targetSpeedRight = b;
 
 }
