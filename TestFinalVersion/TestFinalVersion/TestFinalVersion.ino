@@ -66,7 +66,7 @@ double distanceLeft ;
 double distanceRight;
 double distanceCenter = (distanceLeft + distanceRight) / 2;
 double phi = 0;
-double currentAngle = PI / 4; //Starting angle
+double currentAngle = 0; //Starting angle
 
 
 //All the speed for going forward/going back/left & right
@@ -215,7 +215,7 @@ unsigned long diffTime = currentTime - previousTime;
 unsigned long timeBeforeDelay = millis();
 unsigned long timeAfterDelay = millis();
 float timeSinceBegin;
-float timeBeforeGoingHome = 3 * 60; //In Seconds
+float timeBeforeGoingHome =  60; //In Seconds
 
 //PID for motor control
 
@@ -244,8 +244,8 @@ void setup() {
   pinMode(M1, OUTPUT);
   pinMode(E2, OUTPUT);
   pinMode(M2, OUTPUT);
-  positionOfRobot.x = 50;
-  positionOfRobot.y = 50;
+  positionOfRobot.x = 100;
+  positionOfRobot.y = 400;
   //setting up servos
   servoBack.attach(pinServoBack);
   positionOfArm = servoArm.read();
@@ -335,10 +335,10 @@ void loop() {
 
     if (obstacleInFront() && !isCurrentlydodgingObstacle ) { //&& !goingToGetBottle
 
-      Serial.println("J'EFFECTUE l'EVITAGE D'OBSTACLE");
+      //Serial.println("J'EFFECTUE l'EVITAGE D'OBSTACLE");
       dodgingObstacle();
     }
-
+/*
     Serial.print("Position du robot : (");
     Serial.print(positionOfRobot.x);
     Serial.print(";");
@@ -346,7 +346,7 @@ void loop() {
     Serial.print(") ");
     Serial.print("Current angle : ");
     Serial.print(currentAngle / PI * 180);
-    Serial.println(";");
+    Serial.println(";");*/
     if (
       !( //Don't look for the bottle if close to the rock area
         ((positionOfRobot.x > (sizeOfFullArena - sizeBadAreaGrassX - greyArea)) && (positionOfRobot.y < sizeBadAreaGrassY) && ((currentAngle < (PI / 2.0) ) || (currentAngle > (3.0 * PI / 2.0)))) ||
@@ -371,7 +371,7 @@ void loop() {
       goingToGetBottle = false;
     }
     if (goingToGetBottle) {
-      Serial.println("JE CHERCHE LA BOUTEILLE MIAM MIAM LA BOUTEILLE");
+      //Serial.println("JE CHERCHE LA BOUTEILLE MIAM MIAM LA BOUTEILLE");
     }
 
     if (!travellingToADestination && !goingToGetBottle) {
@@ -532,7 +532,7 @@ void bottleDetection() {
         if (sensorsFront[2].get_value() < cutOffDistance) { // Right sensor detects --> T=0 M=1 L=1 R=1
 
 
-          Serial.println(currentAngle / PI * 180);
+          //Serial.println(currentAngle / PI * 180);
           odometry();
           advance(speedForward * 0.3, speedForward * 0.3); //Goes forward for a bit
           for (int i = 0; i < 10; i++) {
@@ -542,7 +542,7 @@ void bottleDetection() {
 
           }
           //delay(1000);
-          Serial.println(currentAngle / PI * 180);
+          //Serial.println(currentAngle / PI * 180);
 
           odometry();
           stop();
@@ -552,9 +552,9 @@ void bottleDetection() {
             odometry();
 
           }
-          Serial.println(currentAngle / PI * 180);
+          //Serial.println(currentAngle / PI * 180);
 
-          Serial.println(currentAngle / PI * 180);
+          //Serial.println(currentAngle / PI * 180);
           arm();                                          //Grabs bottle
           odometry();
           goingToGetBottle = false;
@@ -790,7 +790,7 @@ void goingToALocation() {
         count++;
         isCurrentlydodgingObstacle  = false;
       }
-      Serial.println("DODGING LEFT");
+      //Serial.println("DODGING LEFT");
     }
     if (indexPosibility == 4) {
       if (time_ < time_dodge) {
@@ -804,7 +804,7 @@ void goingToALocation() {
         isCurrentlydodgingObstacle  = false;
       }
 
-      Serial.println("DODGING RIGHT");
+      //Serial.println("DODGING RIGHT");
     }
   }
 }
@@ -818,7 +818,7 @@ void readValueCompass() {
   Serial2.write(0x31); //Asking for the angle, for each command sent you get 8 byte as an answer
   //First byte, enter => New Line => hundreds of angle => tens of angle => bits of angle => Decimal point of angle => Decimal of angle => Calibrate sum
   while (!value) {
-    Serial.println("STICK");
+    
     if (Serial2.available()) {
       valeurByte[stack] = Serial2.read(); //Read the value & stacks it
       stack = (stack + 1) % 8; //Allows to read the full 8 bytes
@@ -839,6 +839,7 @@ void readValueCompass() {
   else if (angleCompass < 0) {
     angleCompass += (2 * PI);
   }
+  currentAngle = valueFromCompass;
   /*
     Serial.print("THIS IS THE ANGLE FROM THE COMPASS VALUE : ");
     Serial.println(angleCompass / (2 * PI) * 360);
@@ -846,6 +847,7 @@ void readValueCompass() {
     Serial.println(currentAngle / (2 * PI) * 360);
     Serial.print("THIS IS THE DIFF : ");
     Serial.println(abs(currentAngle - angleCompass) / (2 * PI) * 360);*/
+    
   Serial.print(toDegree(currentAngle)); //En degré
   Serial.print(" ");
   Serial.print(toDegree(valueFromCompass )); //En degré
@@ -919,12 +921,12 @@ void dodgingObstacle() {
   double thresholdDistanceAvoid = 50;
   if (sensorsObstacle[0].get_value() < thresholdDistanceAvoid) { //S0=1
     if (sensorsObstacle[2].get_value() < thresholdDistanceAvoid) { //S2=1
-      Serial.println("S0 =1 S2 = 1");
+      //Serial.println("S0 =1 S2 = 1");
       goingBack = true;
       travellingToADestination = true;
     }
     else { //S2=0
-      Serial.println("S0 =1 S2 = 0");
+      //Serial.println("S0 =1 S2 = 0");
       isCurrentlydodgingObstacle  = true;
       indexPosibility = 4;
       time_ = time_dodge / 2.0;
@@ -933,7 +935,7 @@ void dodgingObstacle() {
   }
   else { //S0=0
     if (sensorsObstacle[2].get_value() < thresholdDistanceAvoid) { //S2=1
-      Serial.println("S0 =0 S2 = 1");
+      //Serial.println("S0 =0 S2 = 1");
 
       isCurrentlydodgingObstacle  = true;
       indexPosibility = 3;
@@ -942,7 +944,7 @@ void dodgingObstacle() {
     }
     else { //S2=0
       if (sensorsObstacle[1].get_value() < thresholdDistanceAvoid) { //S1==1
-        Serial.println("S0 =0 S1 = 1 S2 = 0");
+        //Serial.println("S0 =0 S1 = 1 S2 = 0");
 
         goingBack = true;
         travellingToADestination = true;
@@ -1112,7 +1114,7 @@ void arm() {
   numberOfBottles++;
   stop();
   servoArm.attach(pinservoArm);
-  Serial.println("Arm Turning...");
+  //Serial.println("Arm Turning...");
   for (int position = uplim; position < lowlim; position++) {
     servoArm.writeMicroseconds(position);
     delay(downspeed);
@@ -1127,14 +1129,14 @@ void arm() {
     delay(upspeedSecondPart);
   }
   servoArm.detach();
-  Serial.println("-DONE TURNING-");
+  //Serial.println("-DONE TURNING-");
 }
 
 //The back is opening
 void back() {
   delay(1000);
   stop();
-  Serial.println("Back opening...");
+  //Serial.println("Back opening...");
   for (int position = uplim_b; position > lowlim_b; position--) {
     servoBack.write(position);
     delay(1);
@@ -1144,7 +1146,7 @@ void back() {
     servoBack.write(position);
     delay(1);
   }
-  Serial.println("-DONE OPENING/CLOSING-");
+  //Serial.println("-DONE OPENING/CLOSING-");
 
 
 }
