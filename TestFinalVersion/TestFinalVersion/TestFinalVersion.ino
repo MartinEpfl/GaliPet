@@ -1,4 +1,5 @@
 
+
 #include <PID_v1.h>
 #include <Encoder.h>
 #include <Servo.h>
@@ -66,7 +67,7 @@ double distanceLeft ;
 double distanceRight;
 double distanceCenter = (distanceLeft + distanceRight) / 2;
 double phi = 0;
-double currentAngle = PI / 4.0; //Starting angle
+double currentAngle = ( PI) / 4.0; //Starting angle ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 //All the speed for going forward/going back/left & right
@@ -175,8 +176,8 @@ const int numberMaxOfBottle = 5;
 Servo servoBack;
 int pinServoBack = 9; //Pin of servo for the back (PWM)
 int positionOfBack;
-int uplim_b = 45; //Position of back when close
-int lowlim_b = 0; //Position of back when open
+int uplim_b = 1350; //Position of back when close
+int lowlim_b = 200; //Position of back when open
 int speedBack = 50; //Speed back is opening/closing
 int waitingBottleOut = 3000; //Waiting for bottle to go out
 
@@ -232,8 +233,10 @@ PID rightPID(&speedWheelRight, &pwmOutRight, &targetSpeedRight, 5.1, 2, 0.005, D
 unsigned actual = millis();
 unsigned old = millis();
 unsigned long tempTime = millis();
+unsigned long timeSinceLastRun = 0;
 
 void setup() {
+  //robotIsHome = true;
   timeSinceBegin = millis();
   // put your setup code here, to run once:
   Serial.begin(19200);      //Set Baud Rate
@@ -250,18 +253,21 @@ void setup() {
   positionOfRobot.x = 50;
   positionOfRobot.y = 50;
   //setting up servos
-  servoBack.attach(pinServoBack);
+  // servoBack.attach(pinServoBack);
+  servoArm.attach(pinservoArm);
+
   positionOfArm = servoArm.read();
   Serial.println("Reseting the arm...");
   servoArm.writeMicroseconds(500);
   Serial.println("DONE");
-  positionOfBack = servoBack.read();
+  // positionOfBack = servoBack.read();
   Serial.println("Reseting the back...");
-  for (int position = lowlim_b; position < uplim_b; position++) {
+  /*
+    for (int position = lowlim_b; position < uplim_b; position++) {
     servoBack.write(position);
     delay(1);
 
-  }
+    }*/
   delay(100);
   // servoBack.detach();
 
@@ -279,7 +285,7 @@ void setup() {
 
   //Sensors ON
   for (int i = 0; i < numberOfSensorsBack; i++) {
-    sensorsBack[i].sensorInit(pinsBack[i], 30);
+    sensorsBack[i].sensorInit(pinsBack[i], 80);
   }
   for (int i = 0; i < numberOfSensorObstacle; i++) {
     sensorsObstacle[i].sensorInit(pinsObstacle[i], 80);
@@ -287,32 +293,45 @@ void setup() {
   for (int i = 0; i < numberOfSensorsFront; i++) {
     sensorsFront[i].sensorInit(pinsFront[i], 80);
   }
+
 }
 
 double compassArray[5];
 
 void loop() {
-  robotIsHome = true;
 
-  Serial.println(pwmOutLeft);
-  Serial.println(pwmOutRight);
+  // Serial.println(pwmOutLeft);
+  // Serial.println(pwmOutRight);
   if (isnan(pwmOutLeft)) {
-    analogWrite(E1, 0);
     pwmOutLeft = 0;
+    targetSpeedLeft = 20;
+
+    Serial.println(speedWheelLeft);
+    Serial.println(pwmOutLeft);
+    Serial.println(targetSpeedLeft);
+
     Serial.println("NAN");
   }
   if (isnan(pwmOutRight)) {
-    analogWrite(E2, 0);
-    pwmOutLeft = 0;
+
+    pwmOutRight = 0;
+    targetSpeedRight   = 30;
+    Serial.println(speedWheelRight);
+    Serial.println(pwmOutRight);
+    Serial.println(targetSpeedRight);
+
+
     Serial.println("NAN");
   }
   refreshAllPID();
+  //Serial.println(pwmOutLeft);
+  // Serial.println(pwmOutRight);
   old = actual;
   actual = millis();
 
   tempTime = actual - old;
-  Serial.println(tempTime);
-  timeSinceBegin = millis();
+  //Serial.println(tempTime);
+  timeSinceBegin = millis() - timeSinceLastRun;
   if (Serial.available()) {
     char val = Serial.read();
     if (val != -1)
@@ -369,12 +388,12 @@ void loop() {
     Serial.print(currentAngle / PI * 180);
     Serial.println(";");
     if (
-      !( //Don't look for the bottle if close to the rock area
+      !( //Don't look for the bottle if close to the GRASS area
         ((positionOfRobot.x > (sizeOfFullArena - sizeBadAreaGrassX - greyArea)) && (positionOfRobot.y < sizeBadAreaGrassY) && ((currentAngle < (PI / 2.0) ) || (currentAngle > (3.0 * PI / 2.0)))) ||
         ((positionOfRobot.x > (sizeOfFullArena - sizeBadAreaGrassX)) && (positionOfRobot.y < (sizeBadAreaGrassY + greyArea)) && (currentAngle > PI )) ||
         ((positionOfRobot.x > (sizeOfFullArena - sizeBadAreaGrassX - greyArea)) && (positionOfRobot.y < (sizeBadAreaGrassY + greyArea)) && (currentAngle > (3.0 * PI / 2.0))) ||
 
-        //Don't look for the bottles if close to the grass area
+        //Don't look for the bottles if close to the ROCK area
         ((positionOfRobot.x < sizeBadAreaRockXY) && (positionOfRobot.y > (sizeOfFullArena - sizeBadAreaRockXY - greyArea)) && (currentAngle < PI)) ||
         ((positionOfRobot.x < (sizeBadAreaRockXY + greyArea)) && (positionOfRobot.y > (sizeOfFullArena - sizeBadAreaRockXY)) && (currentAngle > (PI / 2.0)) && (currentAngle < (3 * PI / 2))) ||
         ((positionOfRobot.x < (sizeBadAreaRockXY + greyArea)) && (positionOfRobot.y > (sizeOfFullArena - sizeBadAreaRockXY - greyArea)) &&  (currentAngle > (PI / 2.0)) && (currentAngle < (PI)))
@@ -384,16 +403,16 @@ void loop() {
     ) {
       refreshAllPID();
       if (!isCurrentlydodgingObstacle && !goingHome) {
-        // Serial.println("JE CHERChE DES BOUTEILLES");
+        //  Serial.println("JE CHERChE DES BOUTEILLES");
         bottleDetection();
       }
     }
     else {
-      time_ = 0;
+      //   time_ = 0;
       goingToGetBottle = false;
     }
     if (goingToGetBottle) {
-      //         Serial.println("JE CHERCHE LA BOUTEILLE MIAM MIAM LA BOUTEILLE");
+      // Serial.println("JE CHERCHE LA BOUTEILLE MIAM MIAM LA BOUTEILLE");
     }
 
     if (!travellingToADestination && !goingToGetBottle) {
@@ -414,33 +433,146 @@ void loop() {
       do {
         dodge_L(optimalSpeedTurn, optimalSpeedTurn);
         refreshAllPID();
-        odometry();
         delay(30);
+        odometry();
+
       } while (   currentAngle > (PI / 3.0) || currentAngle < (PI / 6.0));
     }
     else {//Otherwise turns to the right
       do {
         dodge_R(optimalSpeedTurn, optimalSpeedTurn);
-        odometry();
         refreshAllPID();
         delay(30);
+        odometry();
+
       } while (   currentAngle > (PI / 3.0) || currentAngle < (PI / 6.0));
     }
 
     while (!noObstacleBehind()) { //Makes sur the wall behind is far enought so that the back can open
       advance(speedForward * 0.2, speedForward * 0.2);
-      odometry();
       refreshAllPID();
       delay(10);
-    }
+      odometry();
 
+    }
     count = maxIteration + 2;
     robotIsHome = false;
     stop();
     back();
+    recalibrate();
+    goingHome = false;
+    numberOfBottles = 0;
+    time_ = 0;
+    timeSinceBegin = 0;
+    stop();
+    refreshAllPID();
+    count = 0;
+    delay(3000);
+    Serial.println("Ready to go!");
+    timeSinceLastRun = millis();
   }
 
 
+
+}
+
+void recalibrate()
+{
+  //  Serial.println(pwmOutLeft);
+  //Serial.println(pwmOutRight);
+  if (isnan(pwmOutLeft)) {
+    analogWrite(E1, 0);
+    pwmOutLeft = 0;
+    Serial.println("NAN");
+  }
+  if (isnan(pwmOutRight)) {
+    analogWrite(E2, 0);
+    pwmOutLeft = 0;
+    Serial.println("NAN");
+  }
+  double backToWheels = 35.5;
+  // go to angle=0
+  do {
+    Serial.println("First");
+    dodge_R(0.3 * speedForward, 0.3 * speedForward);
+    delay(10);
+    odometry();
+    refreshAllPID();
+  } while (!(currentAngle < PI / 24.0 || currentAngle > 47.0 * PI / 24.0));
+  //  } while (!(currentAngle < PI / 6 || currentAngle > (2*PI-PI/6.0)));
+  // back off until you touch the wall
+  do {
+    Serial.println(sensorsBack[0].get_value());
+    Serial.println(sensorsBack[1].get_value());
+    do {
+      sensorsBack[0].loop_sensor();
+      sensorsBack[1].loop_sensor();
+    } while (sensorsBack[1].get_value() == 0 || sensorsBack[0].get_value() == 0);
+    back_off(speedForward * 0.1 * min((min(100, sensorsBack[0].get_value()) / min(100, sensorsBack[1].get_value())) * 12, 15), speedForward * 0.1 * min((min(100, sensorsBack[1].get_value()) / min(100, sensorsBack[0].get_value())) * 12, 15));
+    delay(10);
+    odometry();
+    refreshAllPID();
+
+    //  } while (speedWheelLeft >= 1 && speedWheelRight >= 1);
+  } while ((sensorsBack[0].get_value() > 8 && sensorsBack[1].get_value() > 8));
+  delay(1000);
+  odometry();
+  stop();
+
+  delay(1000);
+
+  // calibrate the x position and the angle
+  currentAngle = 0;
+  positionOfRobot.x = backToWheels;
+
+  // go forward a bit
+  advance(speedForward * 0.5, speedForward * 0.5); //Goes forward for a bit
+  for (int i = 0; i < 250; i++) {
+    refreshAllPID();
+    Serial.println("Third");
+
+    delay(10);
+    odometry();
+  }
+
+  // go to angle=PI/2
+  do {
+    dodge_L(0.3 * speedForward, 0.3 * speedForward);
+    delay(10);
+    odometry();
+    Serial.println("Quatrieme");
+
+    refreshAllPID();
+    Serial.println(toDegree(currentAngle));
+  } while (currentAngle < 11 * PI / 24 || currentAngle > 13 * PI / 24);
+
+
+  // back off until you touch the wall
+  double tempX = positionOfRobot.x;
+  double tempTime = 0;
+  do {
+    Serial.println("Cinquieme");
+    //  back_off(speedForward * 0.1 * min((min(100, sensorsBack[1].get_value()) / min(100, sensorsBack[0].get_value())) * 12, 15), speedForward * 0.1 * min((min(100, sensorsBack[0].get_value()) / min(100, sensorsBack[1].get_value())) * 12, 15));
+    back_off(speedForward * 0.4 , speedForward * 0.4);
+    // back_off(speedForward * 0.3 * min(min(500, sensorsBack[1].get_value()) / min(500, sensorsBack[0].get_value()), 1.5), speedForward * 0.3 * min(min(500, sensorsBack[0].get_value()) / min(500, sensorsBack[1].get_value()), 1.5));
+    delay(10);
+    odometry();
+    refreshAllPID();
+    sensorsBack[0].loop_sensor();
+    sensorsBack[1].loop_sensor();
+    tempTime++;
+  } while (tempTime < 200);
+
+  //} while (sensorsBack[0].get_value() > 9 && sensorsBack[1].get_value() > 9);
+  delay(1000);
+  odometry();
+  // recalibrate y position and the angle
+  currentAngle = PI / 2;
+  positionOfRobot.y = backToWheels;
+  positionOfRobot.x = tempX;
+  stop();
+  Serial.println(positionOfRobot.x);
+  Serial.println(positionOfRobot.y);
 
 }
 
@@ -449,7 +581,7 @@ bool obstacleInFront() {
     sensorsObstacle[i].loop_sensor();
   }
   for (int i = 0; i < numberOfSensorObstacle; i++) {
-    if (sensorsObstacle[i].get_value() < 75) {
+    if (sensorsObstacle[i].get_value() < 100) {
       // Serial.print("VALUE OF THE BOOL : ");
       // Serial.println(isCurrentlydodgingObstacle);
       // Serial.println("OUI OUI OUI");
@@ -465,7 +597,10 @@ bool obstacleInFront() {
 //Returns false it there is an obstacle
 bool noObstacleBehind() {
   for (int i = 0; i < numberOfSensorsBack; i++) {
+    sensorsBack[i].loop_sensor();
 
+  }
+  for (int i = 0; i < numberOfSensorsBack; i++) {
     if (sensorsBack[i].get_value() < thresholdBackSensors) {
       return false;
     }
@@ -557,7 +692,7 @@ void bottleDetection() {
           //Serial.println(currentAngle / PI * 180);
           odometry();
           advance(speedForward * 0.3, speedForward * 0.3); //Goes forward for a bit
-          for (int i = 0; i < 100; i++) {
+          for (int i = 0; i < 150; i++) {
             refreshAllPID();
             delay(10);
             odometry();
@@ -566,7 +701,6 @@ void bottleDetection() {
           //delay(1000);
           //Serial.println(currentAngle / PI * 180);
 
-          odometry();
           stop();
           for (int i = 0; i < 15; i++) {
             delay(10);
@@ -577,7 +711,10 @@ void bottleDetection() {
           //Serial.println(currentAngle / PI * 180);
 
           //Serial.println(currentAngle / PI * 180);
-          arm();                                          //Grabs bottle
+          if (!obstacleInFront()) {
+            arm();                                          //Grabs bottle
+
+          }
           odometry();
           goingToGetBottle = false;
           advance(speedForward * 0.5, speedForward * 0.5);
@@ -674,7 +811,10 @@ void pickingADestination() {
         Serial.print( " , ");
         Serial.println(possibilities[i].y);*/
     possibilities[i].canGoThere = checkIfCanGo(possibilities[i]) ;//&& pinsObstacle[i].get_value<100;
-
+    /*Serial.print("For position ");
+      Serial.print(i);
+      Serial.print(" est ce que je peux y aller ? ");
+      Serial.println(possibilities[i].canGoThere);*/
     possibilities[i].howFar = returnPossibilitiesFromPosition( possibilities[i].x, possibilities[i].y , angles[i] );
     totalFar += possibilities[i].howFar;
     /*
@@ -946,7 +1086,7 @@ void dodgingObstacle() {
       }
 
     }*/
-  double thresholdDistanceAvoid = 50;
+  double thresholdDistanceAvoid = 60;
   if (sensorsObstacle[0].get_value() < thresholdDistanceAvoid) { //S0=1
     if (sensorsObstacle[2].get_value() < thresholdDistanceAvoid) { //S2=1
       //Serial.println("S0 =1 S2 = 1");
@@ -957,7 +1097,7 @@ void dodgingObstacle() {
       //Serial.println("S0 =1 S2 = 0");
       isCurrentlydodgingObstacle  = true;
       indexPosibility = 4;
-      time_ = time_dodge / 2.0;
+      time_ = time_dodge * 3.0 / 4.0;
       travellingToADestination = true;
     }
   }
@@ -967,7 +1107,7 @@ void dodgingObstacle() {
 
       isCurrentlydodgingObstacle  = true;
       indexPosibility = 3;
-      time_ = time_dodge / 2.0;
+      time_ =  time_dodge * 3.0 / 4.0;
       travellingToADestination = true;
     }
     else { //S2=0
@@ -992,6 +1132,8 @@ void odometry() {
   previousTime = currentTime;
   currentTime = millis();
   diffTime = currentTime - previousTime;
+  // Serial.print("THIS IS DIFF : ");
+  //Serial.println(diffTime);
   timeAfterDelay = millis();
   durationLeft = abs(leftEncoder.read()); //Reads the left accumulated encodeur
   durationRight = abs(rightEncoder.read()); //Reads the value accumulated on the right encodeur
@@ -1012,6 +1154,7 @@ void odometry() {
   distanceCenter = (distanceLeft + distanceRight) / 2; //For the center of the two wheels
 
   phi = (distanceRight - distanceLeft) / sizeBetweenWheels;
+  Serial.println(phi);
   positionOfRobot.x = positionOfRobot.x + distanceCenter * cos(currentAngle);
   positionOfRobot.y = positionOfRobot.y + distanceCenter * sin(currentAngle);
   if (acc % 10 == 0) {
@@ -1143,12 +1286,11 @@ int fromProbaToIndex(int first, int second, int third, int randomNumber) {
 void arm() {
   numberOfBottles++;
   stop();
-  servoArm.attach(pinservoArm);
   refreshAllPID();
   //Serial.println("Arm Turning...");
   for (int position = uplim; position < lowlim; position++) {
     servoArm.writeMicroseconds(position);
-    refreshAllPID();
+    //refreshAllPID();
     delay(downspeed);
   }
   delay(waitingOnBottleTime);
@@ -1156,14 +1298,16 @@ void arm() {
   for (int position = lowlim; position > intermediatePosition; position--) {
     servoArm.writeMicroseconds(position);
     delay(upspeedFirstPart);
-    refreshAllPID();
+    //refreshAllPID();
   }
-  for (int position = intermediatePosition; position > uplim; position --) {
+  refreshAllPID();
+
+  for (int position = intermediatePosition; position > uplim; position -= 2) {
     servoArm.writeMicroseconds(position);
     delay(upspeedSecondPart);
-    refreshAllPID();
+    //refreshAllPID();
   }
-  servoArm.detach();
+  refreshAllPID();
   pwmOutLeft = 0;
   pwmOutRight = 0;
   //Serial.println("-DONE TURNING-");
@@ -1171,19 +1315,22 @@ void arm() {
 
 //The back is opening
 void back() {
+  servoBack.attach(pinServoBack);
+
   delay(1000);
   stop();
   //Serial.println("Back opening...");
   for (int position = uplim_b; position > lowlim_b; position--) {
-    servoBack.write(position);
+    servoBack.writeMicroseconds(position);
     delay(1);
   }
   delay(waitingBottleOut);
   for (int position = lowlim_b; position < uplim_b; position++) {
-    servoBack.write(position);
+    servoBack.writeMicroseconds(position);
     delay(1);
   }
   //Serial.println("-DONE OPENING/CLOSING-");
+  servoBack.detach();
 
 
 }
@@ -1277,63 +1424,4 @@ void dodge_L (char a, char b) //Turn Right
   targetSpeedLeft = a;
   targetSpeedRight = b;
 
-}
-void recalibrate()
-{
-
-  double backToWheels = 35.5;
-  // go to angle=0
-  do {
-    turn_R(0.3 * speedForward, 0.3 * speedForward);
-    delay(10);
-    odometry();
-    refreshAllPID;
-  } while (currentAngle > PI / 24 || currentAngle < 47 * PI / 24);
-
-  // back off until you touch the wall
-  do {
-    back_off(speedForward * 0.3 * min(min(500, sensorsBack[1].get_value()) / min(500, sensorsBack[0].get_value()), 1.5), speedForward * 0.3 * min(min(500, sensorsBack[0].get_value()) / min(500, sensorsBack[1].get_value()), 1.5));
-    delay(10);
-    odometry();
-    refreshAllPID();
-  } while (sensorsBack[0].get_value() > 5 && sensorsBack[1].get_value() > 5);
-  delay(1000);
-
-  
-  
-  // calibrate the x position and the angle
-  currentAngle = 0;
-  positionOfRobot.x = backToWheels;
-
-  // go forward a bit
-  advance(speedForward * 0.3, speedForward * 0.3); //Goes forward for a bit
-  for (int i = 0; i < 100; i++) {
-    refreshAllPID();
-    delay(10);
-    odometry();
-  }
-
-  // go to angle=PI/2
-  do {
-    turn_L(0.3 * speedForward, 0.3 * speedForward);
-    delay(10);
-    odometry();
-    refreshAllPID;
-  } while (currentAngle < 11 * PI / 24 || currentAngle > 13 * PI / 24);
-
-
-  // back off until you touch the wall
-  do {
-    back_off(speedForward * 0.3 * min(min(500, sensorsBack[1].get_value()) / min(500, sensorsBack[0].get_value()), 1.5), speedForward * 0.3 * min(min(500, sensorsBack[0].get_value()) / min(500, sensorsBack[1].get_value()), 1.5));
-    delay(10);
-    odometry();
-    refreshAllPID();
-  } while (sensorsBack[0].get_value() > 5 && sensorsBack[1].get_value() > 5);
-  delay(1000);
-  
-  // recalibrate y position and the angle
-  currentAngle = PI / 2;
-  positionOfRobot.y = backToWheels;
-
-  Serial.println(positionOfRobot.x);
 }

@@ -21,8 +21,12 @@ void setup() {
 
   Serial.begin(19200);
   Serial2.begin(9600);
-  
-  readValueCompass();
+  /*
+  Serial2.write(0xC0);
+  delay(3 * 60 * 1000);
+  Serial2.write(0xC1);
+  */
+  // readValueCompass();
 
   diff = PI / 4 - angle;
 }
@@ -30,9 +34,9 @@ void setup() {
 void loop() {
 
   readValueCompass();
-  //Serial.println(angle);
+  Serial.println(angle);
   delay(10);
- 
+
 }
 
 void readValueCompass() {

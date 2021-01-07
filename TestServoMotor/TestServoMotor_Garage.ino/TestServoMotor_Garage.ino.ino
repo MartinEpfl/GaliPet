@@ -16,7 +16,7 @@ void setup() {
   Serial.begin(9600);
   // Attache le servomoteur à la broche D9
 
-  monServomoteur.attach(7);
+  monServomoteur.attach(9);
   positionOfArm = monServomoteur.read();
   Serial.print(positionOfArm);
 
