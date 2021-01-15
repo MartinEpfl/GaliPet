@@ -1,6 +1,8 @@
 /*
    Code created by Nils Toggwyler, Maxime Rombach and Martin Cibils for the EPFL STI Robot Competition of 2021.
    The library of the servo has been slightly changed so that the arm goes a bit more down.
+   The github link is : https://github.com/MartinEpfl/GaliPet
+   
 */
 
 #include <PID_v1.h>
@@ -754,9 +756,13 @@ void pickingADestination() {
 }
 
 /*
-   If a location is picked then it will head to this location
+   If a location is picked then it will head to this location.
+   The movement picked depends of the variable indexPossiblity.
+   If it is 0, the robots goes backward, 1 it turns left, 2 it goes forward, 3 it turns right
+   4 it dodges left and 5 it dodges right.
+   The variable time_ starts at 0 and increments every loop() and the robot keeps doing this movement
+   until time_ reaches another variable(time_back, time_turn,...) that depends of the movement we're doing. 
 */
-//If a location has been picked then the robot will do the pre-determined movement
 void goingToALocation() {
   if (goingBack) {
     if (noObstacleBehind()) {
