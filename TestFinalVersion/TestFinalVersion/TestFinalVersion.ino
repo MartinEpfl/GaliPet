@@ -90,9 +90,7 @@ const int time_back = 40;
 ////////////////Compass//////////
 double angleCompass = 0;
 double initialDifference = 0;
-double diffMax = 0;
 double valueFromCompass;
-double diff;
 
 
 //////////////////////SENSORS//////////////////////////////////////
@@ -242,7 +240,6 @@ void setup() {
 
   //readValueCompass();
   initialDifference = valueFromCompass - currentAngle ;
-  diffMax = 0;
   pinMode(E1, OUTPUT);
   pinMode(M1, OUTPUT);
   pinMode(E2, OUTPUT);
@@ -852,7 +849,13 @@ void goingToALocation() {
     }
   }
 }
-//Reading the angle from the compass, the angle read from the compass is going clock wise (counter trygonometric) and in degree. Both of these things have to be changed.
+
+
+/*
+ * Reading the angle from the compass, the angle read from the compass is going clock wise (counter trygonometric) and in degree. 
+ * Both of these things have to be changed.
+ * In the end we decided not to use the radian.
+ */
 void readValueCompass() {
   char valeurByte[8];
   int stack = 0;
@@ -873,8 +876,6 @@ void readValueCompass() {
     }
   }
   valueFromCompass = checkBoundsRadian(toRadian(tempAngleCompass) - initialDifference);
-  diff = checkBoundsDiffRadian(currentAngle - valueFromCompass); //En radian
-  if (diff > diffMax) diffMax = diff;
 
   if (angleCompass > 2 * PI) {
     angleCompass -= 2 * PI;
@@ -886,32 +887,39 @@ void readValueCompass() {
 
 }
 
+/*
+ * Takes a radian and return a degree but in the other sens (trygonometric => clock wise)
+ */
 double toDegree(double value) {
   return checkBoundsDegree((value) / PI * 180);
 }
 
+/*
+ * Takes a degree and return a radian but in the other sens (trygonometric <= clock wise)
+ */
 double toRadian(double value) {
   return checkBoundsRadian((360 - value) / 180 * PI);
 }
 
+/*
+ * This function make sure the angle in degree doesn't get over 360 or under 0
+ */
 double checkBoundsDegree(double value) {
   if (value >= 360)return (value - 360);
   if (value < 0) return (value + 360);
   return value;
 }
 
+
+/*
+ * This function make sure the angle in radian doesn't get over 2*PI or under 0
+ */
 double checkBoundsRadian(double value) {
   if (value >= 2 * PI) return (value - (2 * PI));
   if (value < 0) return (value + (2 * PI));
   return value;
 }
 
-double checkBoundsDiffRadian(double value) {
-  if (value >= PI)return 2 * PI - value;
-  if (value < (-PI)) return 2 * PI - abs(value);
-  if (value < 0.0) return abs(value);
-  return value;
-}
 /*
    The final state machine of what to do in case an obstacle is detected
 */
@@ -991,7 +999,7 @@ void odometry() {
   else if (currentAngle < 0) {
     currentAngle += (2 * PI);
   }
-  leftEncoder.write(0); //Resets the accumulators to 0
+  leftEncoder.write(0); //Resets the accumulators (of the encoders) to 0
   rightEncoder.write(0);
 }
 
