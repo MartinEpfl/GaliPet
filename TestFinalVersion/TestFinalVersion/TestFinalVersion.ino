@@ -59,7 +59,7 @@ int totalFar = 0;
 
 
 //Odometry
-double speedWheelRight = 0; //cm/s Speed of left wheel
+double speedWheelRight = 0; //Speed of left wheel
 double speedWheelLeft = 0; //Speed of right wheel
 double sizeBetweenWheels = 38.3; //cm
 double sizeHeight = 41; //cm
@@ -87,7 +87,6 @@ const int time_dodge = 10;
 const int time_back = 40;
 
 /////////////////////////////////////////////////////
-//All the speeds are in ms/angle (it is not a speed I know it's the inverse of a speed
 
 ////////////////Compass//////////
 double angleCompass = 0;
@@ -96,7 +95,9 @@ double valueFromCompass;
 
 
 //////////////////////SENSORS//////////////////////////////////////
-
+//This is a struct for the sensors, instead of picking on value on the sensors
+//we average it on 5 values. We init a struct with a pin and a number that indicates
+//the model of the sensor.
 const int window_size = 5;
 
 #define model80 1080

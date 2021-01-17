@@ -21,6 +21,8 @@ int valueY[100];
 
 void setup() {
   // put your setup code here, to run once:
+randomSeed(45);
+
 
 }
 
