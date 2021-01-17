@@ -1,8 +1,9 @@
+
 /*
    Code created by Nils Toggwyler, Maxime Rombach and Martin Cibils for the EPFL STI Robot Competition of 2021.
    The library of the servo has been slightly changed so that the arm goes a bit more down.
    The github link is : https://github.com/MartinEpfl/GaliPet
-   
+   The libraries needed are in the folder "libraries".
 */
 
 #include <PID_v1.h>
