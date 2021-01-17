@@ -3,4 +3,4 @@ The code is made for a robot that has two see bottles, grap them and bring them 
 The final code is in \GaliPet_Final_Code.
 Most of the others repo are mainly test of components that we tested for the robot such as the sensors, the motors and others. 
 Now a cool photo of our robot :
-![Screenshot](photo_cool.jpg)
+![Screenshot](PhotoOfRobot.jpg)
