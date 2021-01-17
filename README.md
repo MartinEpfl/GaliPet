@@ -1,4 +1,4 @@
-#Galipet code
+# Galipet code
 
 Hello and welcome to our github projejct for our semester project of the fall semester of 2020.
 The code is made for a robot that has two see bottles, grap them and bring them to the recycling area. All of this while dodgind obstacles.
